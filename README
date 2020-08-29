@@ -1,5 +1,5 @@
-Compile: make / make all
-Run tests: make clean && make TEST=1
-Run in qemu: make qemu / make qemu-nox
-Debug with gdb: make qemu-gdb / make qemu-nox-gdb
-                (in another terminal) gdb
+This is the master branch of mcertikos. You are not supposed to work on this
+branch. Instead, follow the instructions (linked below) and checkout specific
+branches for assignments.
+
+https://flint.cs.yale.edu/cs422/assignments/index.html
