@@ -23,7 +23,13 @@
  */
 unsigned int palloc()
 {
-    // TODO
+    unsigned int n_pages = get_nps(); 
+    for (unsigned int pg = VM_USERLO_PI; pg < VM_USERHI_PI; pg++) {
+        if (at_is_norm(pg) && !at_is_allocated(pg)) {
+            at_set_allocated(pg, 1);
+            return pg;
+        }
+    }
     return 0;
 }
 
@@ -37,5 +43,5 @@ unsigned int palloc()
  */
 void pfree(unsigned int pfree_index)
 {
-    // TODO
+    at_set_allocated(pfree_index, 0);
 }

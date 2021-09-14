@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 '''
 Following instructions will create a disk image with following disk geometry parameters:

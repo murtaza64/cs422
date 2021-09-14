@@ -3,3 +3,12 @@ Run tests: make clean && make TEST=1
 Run in qemu: make qemu / make qemu-nox
 Debug with gdb: make qemu-gdb / make qemu-nox-gdb
                 (in another terminal) gdb
+
+Question A
+1.) Occurs line 113 in boot1.S, after SMAP is loaded and ebx register is 0, change the lowest bit in the cr0 register to 1 to indicate the system is in protected mode
+2.) The last instruction from bootstrap is: jmp *edx, the first instruction of the kernel is: cli
+3.) The first instruction of kernel is at: 0x001023e0
+4.) The bootloader decides how many sectors it must read by finding the first program
+header from the elfheader and reading each section. The number of sections is stored by the
+elfheader's e_phnum field. Then for each section, a for loop in readsection and keeps reading 
+sectors from disk until at least "count" bytes have been read.

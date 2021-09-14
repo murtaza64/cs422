@@ -22,6 +22,16 @@ void pmem_init(unsigned int mbi_addr)
     unsigned int nps;
 
     // TODO: Define your local variables here.
+    unsigned int n_rows;
+
+    unsigned int max_addr = 0x0;
+    unsigned int start;
+    unsigned int end;
+    unsigned int row;
+    unsigned int pg;
+    unsigned int found;
+
+    
 
     // Calls the lower layer initialization primitive.
     // The parameter mbi_addr should not be used in the further code.
@@ -33,7 +43,19 @@ void pmem_init(unsigned int mbi_addr)
      * Hint: Think of it as the highest address in the ranges of the memory map table,
      *       divided by the page size.
      */
-    // TODO
+    //TODO
+    
+    n_rows = get_size();
+
+    for (row = 0; row < n_rows; row++) {
+        end = get_mms(row) + get_mml(row) - 1; //minus 1? good idea for test case?
+        if (end > max_addr) {
+            max_addr = end;
+        }
+    }
+
+    nps = max_addr / PAGESIZE;
+
 
     set_nps(nps);  // Setting the value computed above to NUM_PAGES.
 
@@ -61,4 +83,25 @@ void pmem_init(unsigned int mbi_addr)
      *    so in that case, you should consider those pages as unavailable.
      */
     // TODO
+    
+    for (pg = 0; pg < nps; pg++) {
+        if (pg < VM_USERLO_PI || pg >= VM_USERHI_PI) {
+            at_set_perm(pg, 1);
+        }
+        else {
+            found = 0;
+            for (row = 0; row < n_rows; row++) {
+                start = get_mms(row);
+                end = start + get_mml(row) - 1;
+                if (is_usable(row) && (start <= (pg * PAGESIZE)) && (end >= ((pg + 1) * PAGESIZE))) {
+                    at_set_perm(pg, 2);
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                at_set_perm(pg, 0);
+            }
+        }
+    }
 }
