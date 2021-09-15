@@ -26,6 +26,9 @@ unsigned int start_search_at_page = VM_USERLO_PI;
 
 unsigned int palloc()
 {
+    if (start_search_at_page < VM_USERLO_PI || start_search_at_page > VM_USERHI_PI) {
+        start_search_at_page = VM_USERLO_PI;
+    }
     // unsigned int n_pages = get_nps(); 
     unsigned int pg = start_search_at_page; 
 
