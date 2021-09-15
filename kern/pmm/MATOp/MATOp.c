@@ -21,15 +21,28 @@
  * 2. Optimize the code using memoization so that you do not have to
  *    scan the allocation table from scratch every time.
  */
+
+unsigned int start_search_at_page = VM_USERLO_PI;
+
 unsigned int palloc()
 {
-    unsigned int n_pages = get_nps(); 
-    for (unsigned int pg = VM_USERLO_PI; pg < VM_USERHI_PI; pg++) {
+    // unsigned int n_pages = get_nps(); 
+    unsigned int pg = start_search_at_page; 
+
+    do {
         if (at_is_norm(pg) && !at_is_allocated(pg)) {
             at_set_allocated(pg, 1);
+            start_search_at_page = pg == VM_USERHI_PI ? VM_USERLO_PI : pg + 1;
+            KERN_DEBUG("allocated page at index %d\n", pg);
             return pg;
         }
-    }
+
+        pg++;
+        if (pg == VM_USERHI_PI) {
+            pg = VM_USERLO_PI;
+        }
+    } while (pg != start_search_at_page);
+
     return 0;
 }
 

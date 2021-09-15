@@ -48,11 +48,35 @@ int MATOp_test1()
  * the original value. O.w., it may make the future test scripts to fail even if you implement all
  * the functions correctly.
  */
+
+#define N_PAGES 50
+
 int MATOp_test_own()
 {
     // TODO (optional)
     // dprintf("own test passed.\n");
+    dprintf("page index range = [%d, %d)\n", VM_USERLO_PI, VM_USERHI_PI);
+    int pg = palloc();
+    dprintf("first page allocated at %d\n", pg);
+    pfree(pg);
+    int page_index[N_PAGES];
+    for (int i = 0; i < N_PAGES; i++) {
+        page_index[i] = palloc();
+    }
+    for (int i = 0; i < N_PAGES; i++) {
+        pfree(page_index[i]);
+    }
+    dprintf("%d pages allocated and freed, last at index %d\n", N_PAGES, page_index[N_PAGES-1]);
+    page_index[N_PAGES];
+    for (int i = 0; i < N_PAGES; i++) {
+        page_index[i] = palloc();
+    }
+    for (int i = 0; i < N_PAGES; i++) {
+        pfree(page_index[i]);
+    }
+    dprintf("%d pages allocated and freed, last at index %d\n", N_PAGES, page_index[N_PAGES-1]);
     return 0;
+
 }
 
 int test_MATOp()

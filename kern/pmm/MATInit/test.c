@@ -49,7 +49,7 @@ int MATInit_test_own()
     int nps = get_nps();
     for (i = 0; i < nps; i++) {
         if (at_is_norm(i) != 0) {
-            dprintf("normal page found: %x", i);
+            dprintf("normal page found: %x\n", i);
             return 0;
         }
     }
