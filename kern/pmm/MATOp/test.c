@@ -48,8 +48,9 @@ int MATOp_test1()
  * the original value. O.w., it may make the future test scripts to fail even if you implement all
  * the functions correctly.
  */
-
-#define N_PAGES 50
+#ifndef MATOP_TEST_N_PAGES
+#define MATOP_TEST_N_PAGES 16
+#endif
 
 int MATOp_test_own()
 {
@@ -59,22 +60,22 @@ int MATOp_test_own()
     int pg = palloc();
     dprintf("first page allocated at %d\n", pg);
     pfree(pg);
-    int page_index[N_PAGES];
-    for (int i = 0; i < N_PAGES; i++) {
+    int page_index[MATOP_TEST_N_PAGES];
+    for (int i = 0; i < MATOP_TEST_N_PAGES; i++) {
         page_index[i] = palloc();
     }
-    for (int i = 0; i < N_PAGES; i++) {
+    for (int i = 0; i < MATOP_TEST_N_PAGES; i++) {
         pfree(page_index[i]);
     }
-    dprintf("%d pages allocated and freed, last at index %d\n", N_PAGES, page_index[N_PAGES-1]);
-    page_index[N_PAGES];
-    for (int i = 0; i < N_PAGES; i++) {
+    dprintf("%d pages allocated and freed, last at index %d\n", MATOP_TEST_N_PAGES, page_index[MATOP_TEST_N_PAGES-1]);
+    page_index[MATOP_TEST_N_PAGES];
+    for (int i = 0; i < MATOP_TEST_N_PAGES; i++) {
         page_index[i] = palloc();
     }
-    for (int i = 0; i < N_PAGES; i++) {
+    for (int i = 0; i < MATOP_TEST_N_PAGES; i++) {
         pfree(page_index[i]);
     }
-    dprintf("%d pages allocated and freed, last at index %d\n", N_PAGES, page_index[N_PAGES-1]);
+    dprintf("%d pages allocated and freed, last at index %d\n", MATOP_TEST_N_PAGES, page_index[MATOP_TEST_N_PAGES-1]);
     return 0;
 
 }
