@@ -22,30 +22,31 @@
  *    scan the allocation table from scratch every time.
  */
 
-unsigned int start_search_at_page = VM_USERLO_PI;
+unsigned int cursor = VM_USERLO_PI;
 
 unsigned int palloc()
 {
-    if (start_search_at_page < VM_USERLO_PI || start_search_at_page > VM_USERHI_PI) {
-        start_search_at_page = VM_USERLO_PI;
+    unsigned int initial_cursor;
+    if (cursor < VM_USERLO_PI || cursor >= VM_USERHI_PI) {
+        cursor = VM_USERLO_PI;
     }
-    // unsigned int n_pages = get_nps(); 
-    unsigned int pg = start_search_at_page; 
+    initial_cursor = cursor;
+    // unsigned int n_pages = get_nps();  
 
     do {
-        if (at_is_norm(pg) && !at_is_allocated(pg)) {
-            at_set_allocated(pg, 1);
-            start_search_at_page = pg == VM_USERHI_PI ? VM_USERLO_PI : pg + 1;
-            KERN_DEBUG("allocated page at index %d\n", pg);
-            return pg;
+        if (at_is_norm(cursor) && !at_is_allocated(cursor)) {
+            at_set_allocated(cursor, 1);
+            // KERN_DEBUG("allocated page at index %d\n", cursor);
+            cursor++;
+            return cursor - 1;
         }
 
-        pg++;
-        if (pg == VM_USERHI_PI) {
-            pg = VM_USERLO_PI;
+        cursor++;
+        if (cursor == VM_USERHI_PI) {
+            cursor = VM_USERLO_PI;
         }
-    } while (pg != start_search_at_page);
-
+    } while (cursor != initial_cursor);
+    KERN_DEBUG("unable to allocate page\n");
     return 0;
 }
 
