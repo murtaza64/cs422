@@ -48,7 +48,6 @@ void set_nps(unsigned int nps)
  */
 unsigned int at_is_norm(unsigned int page_index)
 {
-    
     return AT[page_index].perm > 1;
 }
 
