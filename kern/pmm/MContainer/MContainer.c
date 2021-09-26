@@ -19,7 +19,7 @@ static struct SContainer CONTAINER[NUM_IDS];
  */
 void container_init(unsigned int mbi_addr)
 {
-    unsigned int real_quota;
+    unsigned int real_quota, pg_idx, nps;
     // TODO: define your local variables here.
 
     pmem_init(mbi_addr);
@@ -30,6 +30,15 @@ void container_init(unsigned int mbi_addr)
      * It should be the number of the unallocated pages with the normal permission
      * in the physical memory allocation table.
      */
+
+    pg_idx = 0;
+    nps = get_nps();
+    while (pg_idx < nps) {
+        if (at_is_norm(pg_idx) && !at_is_allocated(pg_idx)) {
+            real_quota++;
+        }
+        pg_idx++;
+    }
 
     KERN_DEBUG("\nreal quota: %d\n\n", real_quota);
 
@@ -43,29 +52,25 @@ void container_init(unsigned int mbi_addr)
 // Get the id of parent process of process # [id].
 unsigned int container_get_parent(unsigned int id)
 {
-    // TODO
-    return 0;
+    return CONTAINER[id].parent;
 }
 
 // Get the number of children of process # [id].
 unsigned int container_get_nchildren(unsigned int id)
 {
-    // TODO
-    return 0;
+    return CONTAINER[id].nchildren;
 }
 
 // Get the maximum memory quota of process # [id].
 unsigned int container_get_quota(unsigned int id)
 {
-    // TODO
-    return 0;
+    return CONTAINER[id].quota;
 }
 
 // Get the current memory usage of process # [id].
 unsigned int container_get_usage(unsigned int id)
 {
-    // TODO
-    return 0;
+    return CONTAINER[id].usage;
 }
 
 // Determines whether the process # [id] can consume an extra
@@ -73,7 +78,13 @@ unsigned int container_get_usage(unsigned int id)
 unsigned int container_can_consume(unsigned int id, unsigned int n)
 {
     // TODO
-    return 0;
+    // Do we need to check if there are n pages of pmem available? Or is that
+    // Done in another method
+    if (CONTAINER[id].usage + n > CONTAINER[id].quota) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 /**
@@ -97,6 +108,17 @@ unsigned int container_split(unsigned int id, unsigned int quota)
      * TODO: Update the container structure of both parent and child process appropriately.
      */
 
+    // Update child container
+    CONTAINER[child].quota = quota;
+    CONTAINER[child].usage = 0;
+    CONTAINER[child].parent = id;
+    CONTAINER[child].nchildren = 0;
+    CONTAINER[child].used = 1;
+
+    // Update parent container
+    CONTAINER[id].usage += quota;
+    CONTAINER[id].nchildren += 1;
+
     return child;
 }
 
@@ -110,11 +132,20 @@ unsigned int container_alloc(unsigned int id)
     /*
      * TODO: Implement the function here.
      */
-    return 0;
+    unsigned int pg_index = palloc();
+    if (pg_index == 0) {
+        // No phyiscal page found, return 0
+        return 0;
+    } else {
+        CONTAINER[id].usage += 1;
+        return pg_index;
+    }
 }
 
 // Frees the physical page and reduces the usage by 1.
 void container_free(unsigned int id, unsigned int page_index)
 {
     // TODO
+    pfree(page_index);
+    CONTAINER[id].usage -= 1;
 }
