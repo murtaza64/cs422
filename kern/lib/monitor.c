@@ -25,11 +25,7 @@ struct Command {
 static struct Command commands[] = {
     {"help", "Display this list of commands", mon_help},
     {"kerninfo", "Display information about the kernel", mon_kerninfo},
-<<<<<<< HEAD
-    {"runproc", "Run the dummy user process", mon_start_user},
-=======
     {"backtrace", "Print a stack trace", mon_backtrace},
->>>>>>> release/lab1-solution
 };
 
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
