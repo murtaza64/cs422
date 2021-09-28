@@ -44,7 +44,6 @@ void pmem_init(unsigned int mbi_addr)
         }
         entry_idx++;
     }
-
     nps = ROUNDDOWN(nps, PAGESIZE) / PAGESIZE;
     set_nps(nps);  // Setting the value computed above to NUM_PAGES.
 

@@ -45,9 +45,17 @@ int MATInit_test1()
  */
 int MATInit_test_own()
 {
+    int i;
+    int nps = get_nps();
+    for (i = 0; i < nps; i++) {
+        if (at_is_norm(i) != 0) {
+            dprintf("normal page found: %x\n", i);
+            return 0;
+        }
+    }
     // TODO (optional)
-    // dprintf("own test passed.\n");
-    return 0;
+    dprintf("no normal pages.\n");
+    return 1;
 }
 
 int test_MATInit()
