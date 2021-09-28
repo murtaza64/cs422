@@ -24,6 +24,9 @@ static unsigned int last_palloc_index = VM_USERLO_PI;
  * 2. Optimize the code using memoization so that you do not have to
  *    scan the allocation table from scratch every time.
  */
+
+unsigned int cursor = VM_USERLO_PI;
+
 unsigned int palloc()
 {
     unsigned int nps;

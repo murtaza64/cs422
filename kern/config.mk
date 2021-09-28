@@ -57,6 +57,10 @@
 # Global debugging switches.
 #
 
+ifdef MATOP_TEST_N_PAGES
+KERN_DEBUG_FLAGS += -DMATOP_TEST_N_PAGES=$(MATOP_TEST_N_PAGES)
+endif
+
 # If set, enable printing debug messages
 ifneq "$(strip $(DEBUG_MSG) $(DEBUG_ALL))" ""
 KERN_DEBUG_FLAGS	+= -DDEBUG_MSG
