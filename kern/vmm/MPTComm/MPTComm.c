@@ -1,6 +1,7 @@
 #include <lib/x86.h>
 
 #include "import.h"
+#define VM_USERLO = 0x40000000;
 
 /**
  * For each process from id 0 to NUM_IDS - 1,
@@ -10,9 +11,16 @@
 void pdir_init(unsigned int mbi_addr)
 {
     // TODO: Define your local variables here.
-
+    unsigned int proc;
+    unsigned int pde_index;
     idptbl_init(mbi_addr);
-
+    for (proc = 0; proc < NUM_IDS; proc++) {
+        for (pde_index = 0; pde_index < 1024; pde_index++) {
+            if (pde_index < 0x100) { // VM_USERLO / 0x1000 / 0x400
+                set_pdir_entry_identity(proc, pde_index);
+            }
+        }
+    }
     // TODO
 }
 
@@ -26,7 +34,15 @@ void pdir_init(unsigned int mbi_addr)
 unsigned int alloc_ptbl(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    return 0;
+    if (!container_can_consume(proc_index, 1)) {
+        return 0;
+    }
+    int pg = container_alloc(proc_index);
+    set_pdir_entry_by_va(proc_index, vaddr, pg);
+    for (int pte = 0; pte < 1024; pte++) {
+        ((unsigned int *) (pg * 4096))[pte] = (unsigned int) 0;
+    }
+    return pg;
 }
 
 // Reverse operation of alloc_ptbl.
@@ -35,4 +51,7 @@ unsigned int alloc_ptbl(unsigned int proc_index, unsigned int vaddr)
 void free_ptbl(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
+    int pg_index = vaddr / 4096;
+    rmv_pdir_entry_by_va(proc_index, vaddr);
+    container_free(proc_index, pg_index);
 }
