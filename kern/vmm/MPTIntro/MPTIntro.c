@@ -66,9 +66,11 @@ void set_pdir_entry_identity(unsigned int proc_index, unsigned int pde_index)
 {
     // TODO
     PDirPool[proc_index][pde_index] = (unsigned int*) ((unsigned int) IDPTbl[pde_index] | PT_PERM_PTU);
-    if (pde_index == 1) {
-        KERN_DEBUG("in set_pdir_entry_identity: entry = %x\n", PDirPool[proc_index][pde_index][0]);
-    }
+    // if (pde_index == 1) {
+    //     KERN_DEBUG("in set_pdir_entry_identity: entry = %x\n", 
+    //         ((unsigned int *) ((unsigned int) PDirPool[proc_index][pde_index] & 0xFFFFF000))[0]);
+    //     KERN_DEBUG("in set_pdir_entry_identity: IDPtbl entry = %x\n", IDPTbl[pde_index][0]);
+    // }
 }
 
 // Removes the specified page directory entry (sets the page directory entry to 0).
@@ -84,7 +86,11 @@ unsigned int get_ptbl_entry(unsigned int proc_index, unsigned int pde_index,
                             unsigned int pte_index)
 {
     // TODO
-    return ((unsigned int *) ((unsigned int) PDirPool[proc_index][pde_index] & 0xFFFFF000))[pte_index];
+    unsigned int out = ((unsigned int *) ((unsigned int) PDirPool[proc_index][pde_index] & 0xFFFFF000))[pte_index];
+    // if (pde_index == 1 && pte_index == 0) {
+    //     KERN_DEBUG("in get_ptbl_entry: entry = %x\n", out);
+    // }
+    return out;
 }
 
 // Sets the specified page table entry with the start address of physical page # [page_index]
@@ -107,9 +113,9 @@ void set_ptbl_entry_identity(unsigned int pde_index, unsigned int pte_index,
 {
     // TODO
     IDPTbl[pde_index][pte_index] = (((pde_index << 10) | pte_index) << 12) | perm;
-    if (pde_index == 1 && pte_index == 0) {
-        KERN_DEBUG("in set_ptbl_entry_identity: entry = %x\n", IDPTbl[pde_index][pte_index]);
-    }
+    // if (pde_index == 1 && pte_index == 0) {
+    //     KERN_DEBUG("in set_ptbl_entry_identity: entry = %x\n", IDPTbl[pde_index][pte_index]);
+    // }
 
 }
 

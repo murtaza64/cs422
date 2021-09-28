@@ -1,8 +1,11 @@
 #include <lib/x86.h>
-
+#include <lib/debug.h>
 #include "import.h"
 
 #define VM_USERLO    0x40000000
+#define VM_USERHI    0xF0000000
+#define PDE_KERN_LO  0x100 // VM_USERLO / 0x1000 / 0x400
+#define PDE_KERN_HI  0x3c0
 
 /**
  * Returns the page table entry corresponding to the virtual address,
@@ -12,12 +15,14 @@
 unsigned int get_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFA00000) >> 22);
+    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFC00000) >> 22);
     unsigned int pdir_entry = get_pdir_entry(proc_index, pde_index);
     unsigned int pdir_perm = pdir_entry & 0x00000001;
     unsigned int pte_index = (unsigned int) ((vaddr & 0x003FF000) >> 12);
+    // KERN_DEBUG("calling get_ptbl_entry with %d %d %d\n", proc_index, pde_index, pte_index);
     unsigned int entry = get_ptbl_entry(proc_index, pde_index, pte_index);
     unsigned int present_perm = (unsigned int) (entry & 0x00000001);
+    // KERN_DEBUG("entry = %x\n", entry);
 
     if (pdir_perm == 0 || present_perm == 0) {
         return 0;
@@ -87,7 +92,7 @@ void idptbl_init(unsigned int mbi_addr)
 
     for (pde_index = 0; pde_index < 1024; pde_index ++) {
         for (pte_index = 0; pte_index < 1024; pte_index ++) {
-            if (pde_index < 0x100) { // VM_USERLO / 0x1000 / 0x400
+            if (pde_index < PDE_KERN_LO || pde_index >= PDE_KERN_HI) { 
                 set_ptbl_entry_identity(pde_index, pte_index, kern_perm);
             }  else {
                 set_ptbl_entry_identity(pde_index, pte_index, other_perm);
