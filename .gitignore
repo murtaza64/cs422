@@ -21,5 +21,6 @@ Icon*
 eject.sh
 *.cerr
 .gdbinit
+lab/
 .vscode
 .vscode/*
