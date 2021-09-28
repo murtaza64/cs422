@@ -1,25 +1,14 @@
-Collaborators: Murtaza Javaid, Daniel Li
+Compile: make / make all
+Run tests: make clean && make TEST=1
+Run in qemu: make qemu / make qemu-nox
+Debug with gdb: make qemu-gdb / make qemu-nox-gdb
+                (in another terminal) gdb
 
-Question A
-1.) Occurs line 113 in boot1.S, after SMAP is loaded and ebx register is 0, change the lowest bit in the cr0 register to 1 to indicate the system is in protected mode
-2.) The last instruction from bootstrap is: jmp *edx, the first instruction of the kernel is: cli
-3.) The first instruction of kernel is at: 0x001023e0
-4.) The bootloader decides how many sectors it must read by finding the first program
-header from the elfheader and reading each section. The number of sections is stored by the
-elfheader's e_phnum field. Then for each section, a for loop in readsection and keeps reading 
-sectors from disk until at least "count" bytes have been read.
+To use your solutions from lab 1: git merge lab1
+To use sample lab 1 solutions: copy files in samples/ to appropriate directories
 
-Description of what we implemented:
-
-Exercise 5 reated getter and setter functions for the AT struct
-    - at_is_norm: returns 1 if page permission at a given index is normal, 0 if otherwise
-    - at_set_perm: sets the page with the given index the given permissions. Marks it as unallocated
-    - at_is_allocated: returns 1 if the page at given index is allocated or 0 otherwise
-    - at_set_allocated: sets the page at the given index with the given allocation flag
-
-Exercise 6: Implemented the intialization table for the AT struct
-    - pmem_init: first calculated the number of physical pages in memory and then loops through all those pages to fill in the respective permissions as specified in the memory map table
-
-Exercise 7: Implemented methods to allocate and free physical pages
-    - pfree: frees the specified page at the given index by setting its allocation value to 0
-    - palloc: allocates physical pages by setting a cursor at VM_USERLO_PI and iterating through to find the next page with normal permissions. The cursor keeps track of the last free page for memoization and is set back to VM_USERLO_PI if it is out of bounds.
+List here the following info:
+1. who you have worked with
+2. whether you coded this assignment together, and if not, who worked on which part
+3. brief description of what you have implemented
+4. and anything else you would like us to know

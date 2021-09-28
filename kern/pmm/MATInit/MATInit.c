@@ -1,4 +1,5 @@
 #include <lib/debug.h>
+#include <lib/types.h>
 #include "import.h"
 
 #define PAGESIZE     4096
@@ -20,18 +21,8 @@
 void pmem_init(unsigned int mbi_addr)
 {
     unsigned int nps;
-
-    // TODO: Define your local variables here.
-    unsigned int n_rows;
-
-    unsigned int max_addr = 0x0;
-    unsigned int start;
-    unsigned int end;
-    unsigned int row;
-    unsigned int pg;
-    unsigned int found;
-
-    
+    unsigned int pg_idx, pmmap_size, cur_addr, highest_addr;
+    unsigned int entry_idx, flag, isnorm, start, len;
 
     // Calls the lower layer initialization primitive.
     // The parameter mbi_addr should not be used in the further code.
@@ -43,20 +34,17 @@ void pmem_init(unsigned int mbi_addr)
      * Hint: Think of it as the highest address in the ranges of the memory map table,
      *       divided by the page size.
      */
-    //TODO
-    
-    n_rows = get_size();
-
-    for (row = 0; row < n_rows; row++) {
-        end = get_mms(row) + get_mml(row) - 1; //minus 1? good idea for test case?
-        if (end > max_addr) {
-            max_addr = end;
+    nps = 0;
+    entry_idx = 0;
+    pmmap_size = get_size();
+    while (entry_idx < pmmap_size) {
+        cur_addr = get_mms(entry_idx) + get_mml(entry_idx);
+        if (nps < cur_addr) {
+            nps = cur_addr;
         }
+        entry_idx++;
     }
-
-    nps = max_addr / PAGESIZE;
-
-
+    nps = ROUNDDOWN(nps, PAGESIZE) / PAGESIZE;
     set_nps(nps);  // Setting the value computed above to NUM_PAGES.
 
     /**
@@ -82,26 +70,30 @@ void pmem_init(unsigned int mbi_addr)
      *    the addresses are in a usable range. Currently, we do not utilize partial pages,
      *    so in that case, you should consider those pages as unavailable.
      */
-    // TODO
-    
-    for (pg = 0; pg < nps; pg++) {
-        if (pg < VM_USERLO_PI || pg >= VM_USERHI_PI) {
-            at_set_perm(pg, 1);
-        }
-        else {
-            found = 0;
-            for (row = 0; row < n_rows; row++) {
-                start = get_mms(row);
-                end = start + get_mml(row) - 1;
-                if (is_usable(row) && (start <= (pg * PAGESIZE)) && (end >= ((pg + 1) * PAGESIZE))) {
-                    at_set_perm(pg, 2);
-                    found = 1;
-                    break;
+    pg_idx = 0;
+    while (pg_idx < nps) {
+        if (pg_idx < VM_USERLO_PI || VM_USERHI_PI <= pg_idx) {
+            at_set_perm(pg_idx, 1);
+        } else {
+            entry_idx = 0;
+            flag = 0;
+            isnorm = 0;
+            while (entry_idx < pmmap_size && !flag) {
+                isnorm = is_usable(entry_idx);
+                start = get_mms(entry_idx);
+                len = get_mml(entry_idx);
+                if (start <= pg_idx * PAGESIZE && (pg_idx + 1) * PAGESIZE <= start + len) {
+                    flag = 1;
                 }
+                entry_idx++;
             }
-            if (!found) {
-                at_set_perm(pg, 0);
+
+            if (flag && isnorm) {
+                at_set_perm(pg_idx, 2);
+            } else {
+                at_set_perm(pg_idx, 0);
             }
         }
+        pg_idx++;
     }
 }
