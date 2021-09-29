@@ -9,6 +9,29 @@ To use sample lab 1 solutions: copy files in samples/ to appropriate directories
 
 List here the following info:
 1. who you have worked with
+
+Murtaza Javaid, Daniel Li
+
 2. whether you coded this assignment together, and if not, who worked on which part
+
+Coded together
+    Murtaza: MPTIntro (partial), MPTComm, MPTKern, 
+    Daniel: MContainer, MPTIntro (partial), MPTOp, MPTNew
+
 3. brief description of what you have implemented
-4. and anything else you would like us to know
+
+    MContainer: Created getter and setter functions for a container struct that
+    tracks how many pages a process can use, its relationship in terms of parents and children, whether it is used and the amount of pages it is using at the moment.
+
+    MPTIntro: Created getter, setter and remove functions for page table and page directory structs. Setter functions also have an identity function that map directly to physical addresses without translation.
+
+    MPTOp: Created getter and setter functions for page table and page directory structs through virtual addresses. Setter functions also have an identity function that map directly to physical addresses without translation. Use bit masks and bit manipulation to extract the page directory index, page table index and permission from va and call on MPTIntro with those values. Also initialize the identity page table with kernel permissions for kernel pages and regular permissions for regular pages.a
+
+    MPTComm: Created page directory intializer that initializes kernel pages. Also created allocate and free pagetable functions that also add or remove entries in the page directory.
+
+    MPTKern: Created an initalizer for the kernel page directory to identity map for all entries. Also created map and unmap functions for entries in the page table mappings to physical addresses.
+
+    MPTNew: Created a function that allocates a physical page given a virtual address. Returns the physical page index if successful or MagicNumber otherwise.
+
+
+4. and anything else you would like us to knowt

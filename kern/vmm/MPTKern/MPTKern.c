@@ -3,6 +3,9 @@
 
 #include "import.h"
 
+#define PDE_KERN_LO  0x100 // VM_USERLO / 0x1000 / 0x400
+#define PDE_KERN_HI  0x3c0
+
 /**
  * Sets the entire page map for process 0 as the identity map.
  * Note that part of the task is already completed by pdir_init.
@@ -10,8 +13,12 @@
 void pdir_init_kern(unsigned int mbi_addr)
 {
     // TODO: Define your local variables here.
+    int i;
 
     pdir_init(mbi_addr);
+    for (i = PDE_KERN_LO; i < PDE_KERN_HI; i++) {
+        set_pdir_entry_identity(0, i);
+    }
 
     //TODO
 }
@@ -28,7 +35,19 @@ unsigned int map_page(unsigned int proc_index, unsigned int vaddr,
                       unsigned int page_index, unsigned int perm)
 {
     // TODO
-    return 0;
+    unsigned int ptbl_p_index;
+    unsigned int entry = get_pdir_entry_by_va(proc_index, vaddr);
+    if (!(entry & 0x1)) {
+        ptbl_p_index = alloc_ptbl(proc_index, vaddr);
+        if (ptbl_p_index == 0) {
+            return MagicNumber;
+        }
+    }
+    else {
+        ptbl_p_index = entry >> 12;
+    }
+    set_ptbl_entry_by_va(proc_index, vaddr, page_index, perm);
+    return ptbl_p_index;
 }
 
 /**
@@ -42,5 +61,9 @@ unsigned int map_page(unsigned int proc_index, unsigned int vaddr,
 unsigned int unmap_page(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    return 0;
+    unsigned int entry = get_ptbl_entry_by_va(proc_index, vaddr);
+    if (entry != 0) {
+        set_ptbl_entry_by_va(proc_index, vaddr, 0, 0);
+    }
+    return entry;
 }

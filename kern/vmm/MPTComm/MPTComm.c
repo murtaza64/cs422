@@ -36,13 +36,15 @@ void pdir_init(unsigned int mbi_addr)
 unsigned int alloc_ptbl(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    if (!container_can_consume(proc_index, 1)) {
-        return 0;
-    }
+    // if (!container_can_consume(proc_index, 1)) {
+    //     return 0;
+    // }
     int pg = container_alloc(proc_index);
-    set_pdir_entry_by_va(proc_index, vaddr, pg);
-    for (int pte = 0; pte < 1024; pte++) {
-        ((unsigned int *) (pg * 4096))[pte] = (unsigned int) 0;
+    if (pg != 0) {
+        set_pdir_entry_by_va(proc_index, vaddr, pg);
+        for (int pte = 0; pte < 1024; pte++) {
+            ((unsigned int *) (pg * 4096))[pte] = (unsigned int) 0;
+        }
     }
     return pg;
 }

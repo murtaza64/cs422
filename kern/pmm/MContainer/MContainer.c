@@ -132,14 +132,20 @@ unsigned int container_alloc(unsigned int id)
     /*
      * TODO: Implement the function here.
      */
-    unsigned int pg_index = palloc();
-    if (pg_index == 0) {
-        // No phyiscal page found, return 0
-        return 0;
+    
+    if (container_can_consume(id, 1) == 1) {
+        unsigned int pg_index = palloc();
+        if (pg_index == 0) {
+            // No phyiscal page found, return 0
+            return 0;
+        } else {
+            CONTAINER[id].usage += 1;
+            return pg_index;
+        }
     } else {
-        CONTAINER[id].usage += 1;
-        return pg_index;
+        return 0;
     }
+
 }
 
 // Frees the physical page and reduces the usage by 1.
