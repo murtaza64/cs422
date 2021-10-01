@@ -7,6 +7,15 @@
 #define PDE_KERN_LO  0x100 // VM_USERLO / 0x1000 / 0x400
 #define PDE_KERN_HI  0x3c0
 
+unsigned int get_pde(unsigned int vaddr) {
+    return (unsigned int) ((vaddr & 0xFFC00000) >> 22);
+}
+
+unsigned int get_pte(unsigned int vaddr) {
+    return (unsigned int) ((vaddr & 0x003FF000) >> 12);
+}
+
+
 /**
  * Returns the page table entry corresponding to the virtual address,
  * according to the page structure of process # [proc_index].
@@ -15,10 +24,10 @@
 unsigned int get_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFC00000) >> 22);
+    unsigned int pde_index = get_pde(vaddr);
     unsigned int pdir_entry = get_pdir_entry(proc_index, pde_index);
     unsigned int pdir_perm = pdir_entry & 0x00000001;
-    unsigned int pte_index = (unsigned int) ((vaddr & 0x003FF000) >> 12);
+    unsigned int pte_index = get_pte(vaddr);
     // KERN_DEBUG("calling get_ptbl_entry with %d %d %d\n", proc_index, pde_index, pte_index);
     unsigned int entry = get_ptbl_entry(proc_index, pde_index, pte_index);
     unsigned int present_perm = (unsigned int) (entry & 0x00000001);
@@ -35,7 +44,7 @@ unsigned int get_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 unsigned int get_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFA00000) >> 22);
+    unsigned int pde_index = get_pde(vaddr);
     return get_pdir_entry(proc_index, pde_index);
 }
 
@@ -43,8 +52,8 @@ unsigned int get_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 void rmv_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFA00000) >> 22);
-    unsigned int pte_index = (unsigned int) ((vaddr & 0x003FF000) >> 12);
+    unsigned int pde_index = get_pde(vaddr);
+    unsigned int pte_index = get_pte(vaddr);
     rmv_ptbl_entry(proc_index, pde_index, pte_index);
 }
 
@@ -52,7 +61,7 @@ void rmv_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 void rmv_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFA00000) >> 22);
+    unsigned int pde_index = get_pde(vaddr);
     rmv_pdir_entry(proc_index, pde_index);
 }
 
@@ -62,8 +71,8 @@ void set_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr,
                           unsigned int page_index, unsigned int perm)
 {
     // TODO
-    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFA00000) >> 22);
-    unsigned int pte_index = (unsigned int) ((vaddr & 0x003FF000) >> 12);
+    unsigned int pde_index = get_pde(vaddr);
+    unsigned int pte_index = get_pte(vaddr);
     set_ptbl_entry(proc_index, pde_index, pte_index, page_index, perm);
 }
 
@@ -72,7 +81,7 @@ void set_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr,
                           unsigned int page_index)
 {
     // TODO
-    unsigned int pde_index = (unsigned int) ((vaddr & 0xFFA00000) >> 22);
+    unsigned int pde_index = get_pde(vaddr);
     set_pdir_entry(proc_index, pde_index, page_index);
 }
 

@@ -55,7 +55,7 @@ unsigned int alloc_ptbl(unsigned int proc_index, unsigned int vaddr)
 void free_ptbl(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    int pg_index = get_pdir_entry_by_va(proc_index, vaddr) >> 12;
+    unsigned int pg_index = get_pdir_entry_by_va(proc_index, vaddr) >> 12;
     rmv_pdir_entry_by_va(proc_index, vaddr);
     container_free(proc_index, pg_index);
 }

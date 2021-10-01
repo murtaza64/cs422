@@ -22,7 +22,14 @@ unsigned int alloc_page(unsigned int proc_index, unsigned int vaddr,
         return MagicNumber;
     }
     // Return physical page
-    return map_page(proc_index, vaddr, page_index, perm);
+
+    unsigned int mapping = map_page(proc_index, vaddr, page_index, perm);
+
+    if (mapping == MagicNumber) {
+        container_free(proc_index, page_index);
+    }
+
+    return mapping;
 }
 
 /**

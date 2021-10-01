@@ -13,7 +13,7 @@
 void pdir_init_kern(unsigned int mbi_addr)
 {
     // TODO: Define your local variables here.
-    int i;
+    unsigned int i;
 
     pdir_init(mbi_addr);
     for (i = PDE_KERN_LO; i < PDE_KERN_HI; i++) {
