@@ -9,8 +9,13 @@
 void tcb_init(unsigned int mbi_addr)
 {
     // TODO: define your local variables here.
+    unsigned int pid;
 
     paging_init(mbi_addr);
 
     // TODO
+    for (pid = 0; pid < NUM_IDS; pid++) {
+        tcb_init_at_id(pid);
+    }
+    
 }

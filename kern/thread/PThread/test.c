@@ -9,6 +9,7 @@ int PThread_test1()
 {
     void *dummy_addr = (void *) 0;
     unsigned int chid = thread_spawn(dummy_addr, 0, 1000);
+    KERN_DEBUG("chid=%d\n", chid);
     if (tcb_get_state(chid) != TSTATE_READY) {
         dprintf("test 1.1 failed: (%d != %d)\n",
                 tcb_get_state(chid), TSTATE_READY);

@@ -78,6 +78,7 @@ int mon_start_user(int argc, char **argv, struct Trapframe *tf)
     tqueue_remove(NUM_IDS, idle_pid);
     tcb_set_state(idle_pid, TSTATE_RUN);
     set_curid(idle_pid);
+    KERN_DEBUG("about to switch context...\n");
     kctx_switch(0, idle_pid);
 
     KERN_PANIC("mon_start_user() should never reach here.\n");

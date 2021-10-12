@@ -85,11 +85,66 @@ int PTQueueInit_test2()
  * the original value. O.w., it may make the future test scripts to fail even if you implement all
  * the functions correctly.
  */
-int PTQueueInit_test_own()
+
+int PTQueueInit_test_MJDL()
 {
     // TODO (optional)
     // dprintf("own test passed.\n");
+
+    //queue contains just pid 4
+    unsigned int pid;
+    while (tqueue_get_head(0) != NUM_IDS) {
+        tqueue_dequeue(0);
+    }
+    tqueue_enqueue(0, 4);
+    
+    if (tcb_get_prev(4) != NUM_IDS || tcb_get_next(4) != NUM_IDS) {
+        dprintf("test MJDL.1 failed: (%d != NUM_IDS || %d != NUM_IDS)\n",
+                tcb_get_prev(2), NUM_IDS, tcb_get_next(2));
+        return 1;
+    }
+    tqueue_remove(0, 4);
+    if (tqueue_get_head(0) != NUM_IDS || tqueue_get_tail(0) != NUM_IDS) {
+        dprintf("test MJDL.2 failed: head or tail not NUM_IDS\n");
+        return 1;
+    }
+    tqueue_remove(0, 4);
+    if (tqueue_get_head(0) != NUM_IDS || tqueue_get_tail(0) != NUM_IDS) {
+        dprintf("test MJDL.3 failed: head or tail not NUM_IDS\n");
+        return 1;
+    }
+    tqueue_enqueue(0, 1);
+    tqueue_enqueue(0, 2);
+    tqueue_enqueue(0, 3);
+    tqueue_remove(0, 1);
+    if (tqueue_get_head(0) != 2) {
+        dprintf("test MJDL.4 failed: head not 2\n");
+        return 1;
+    }
+    if (tcb_get_prev(1) != NUM_IDS || tcb_get_next(1) != NUM_IDS) {
+        dprintf("test MJDL.5 failed: prev or next not NUM_IDS for pid 1\n");
+        return 1;
+    }
+    if (tcb_get_prev(2) != NUM_IDS || tcb_get_next(2) != 3) {
+        dprintf("test MJDL.5 failed: prev or next wrong for pid 2\n");
+        return 1;
+    }
+    tqueue_remove(0, 3);
+    if (tcb_get_prev(2) != NUM_IDS || tcb_get_next(2) != NUM_IDS) {
+        dprintf("test MJDL.6 failed: head or tail not NUM_IDS\n");
+        return 1;
+    }
+    if (tqueue_get_head(0) != 2 || tqueue_get_tail(0) != 2) {
+        dprintf("test MJDL.6 failed: head or tail not 2\n");
+        return 1;
+    }
+    dprintf("all MJDL tests passed :D\n");
+
     return 0;
+}
+
+int PTQueueInit_test_own() {
+    return PTQueueInit_test_MJDL();
 }
 
 int test_PTQueueInit()
