@@ -17,6 +17,11 @@ extern char STACK_LOC[NUM_IDS][PAGESIZE] gcc_aligned(PAGESIZE);
  */
 unsigned int kctx_new(void *entry, unsigned int id, unsigned int quota)
 {
-    // TODO
-    return 0;
+    if (container_can_consume(id, quota)) {
+        unsigned int child_pid = alloc_mem_quota(id, quota);
+        kctx_set_eip(child_pid, entry);
+        kctx_set_esp(child_pid, (void*) &(STACK_LOC[NUM_IDS][PAGESIZE-1]));
+        return child_pid;
+    }
+    return NUM_IDS;
 }
