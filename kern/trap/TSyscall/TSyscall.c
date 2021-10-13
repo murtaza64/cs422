@@ -79,11 +79,12 @@ void sys_spawn(void)
 {
     // TODO
     unsigned int elf_id = syscall_get_arg2();
-    unsigned int quota = syscall_get_arg2();
+    unsigned int quota = syscall_get_arg3();
     void *elf_addr;
     syscall_set_errno(E_INVAL_PID);
     switch (elf_id) {
         case 1:
+            //these should be addresses of byte arrays I believe
             elf_addr = _binary___obj_user_pingpong_ping_start;
             break;
         case 2:
