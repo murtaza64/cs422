@@ -20,8 +20,10 @@ unsigned int thread_spawn(void *entry, unsigned int id, unsigned int quota)
     // TODO
     unsigned int child_pid = kctx_new(entry, id, quota);
     // TSTATE_READY = 0
-    tcb_set_state(child_pid, TSTATE_READY);
-    tqueue_enqueue(NUM_IDS, child_pid);
+    if (child_pid != NUM_IDS) {
+        tcb_set_state(child_pid, TSTATE_READY);
+        tqueue_enqueue(NUM_IDS, child_pid);
+    }
     return child_pid;
 }
 

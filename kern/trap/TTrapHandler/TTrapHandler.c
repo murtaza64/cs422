@@ -95,6 +95,14 @@ void pgflt_handler(void)
 void exception_handler(void)
 {
     // TODO
+    unsigned int cur_pid = get_curid();
+    switch (uctx_pool[cur_pid].trapno) {
+        case T_PGFLT:
+            pgflt_handler();
+            break;
+        default:
+            default_exception_handler();
+    }
 }
 
 static int spurious_intr_handler(void)
@@ -121,6 +129,17 @@ static int default_intr_handler(void)
 void interrupt_handler(void)
 {
     // TODO
+    unsigned int cur_pid = get_curid();
+    switch (uctx_pool[cur_pid].trapno) {
+        case T_IRQ0 + IRQ_SPURIOUS:
+            spurious_intr_handler();
+            break;
+        case T_IRQ0 + IRQ_TIMER:
+            timer_intr_handler();
+            break;
+        default:
+            default_intr_handler();
+    }
 }
 
 void trap(tf_t *tf)
