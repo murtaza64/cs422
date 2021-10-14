@@ -55,15 +55,16 @@ unsigned int proc_fork()
         return NUM_IDS;
     }
     forked_id = thread_spawn((void *) proc_start_user, pid, avail);
-
-    if (forked_id != NUM_IDS) {
+    if (forked_id != NUM_IDS && copy_page_directory_structure(pid, forked_id)) {
         uctx_pool[forked_id] = uctx_pool[pid];
-        uctx_pool[forked_id].regs.eax = 0;
-        uctx_pool[forked_id].regs.ebx = 0; //HACK remove??
+        uctx_pool[forked_id].regs.eax = 0; //errno E_SUCC?
+        uctx_pool[forked_id].regs.ebx = 0; //retval
+        return forked_id;
+    } else {
+        return NUM_IDS;
     }
     // KERN_DEBUG("parent is pid %d\n", pid);
     // KERN_DEBUG("child is pid %d\n", forked_id);
     // KERN_DEBUG("child eax=%d\n", uctx_pool[forked_id].regs.eax);
 
-    return forked_id;
 }

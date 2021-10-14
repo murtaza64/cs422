@@ -10,6 +10,7 @@ unsigned int thread_spawn(void *entry, unsigned int id,
 //for fork
 unsigned int container_get_quota(unsigned int id);
 unsigned int container_get_usage(unsigned int id);
+unsigned int copy_page_directory_structure(unsigned int pid_from, unsigned int pid_to);
 
 #endif  /* _KERN_ */
 

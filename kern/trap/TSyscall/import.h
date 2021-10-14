@@ -21,7 +21,7 @@ void syscall_set_retval5(unsigned int retval);
 unsigned int proc_create(void *elf_addr, unsigned int quota);
 unsigned int proc_fork();
 void thread_yield(void);
-unsigned int copy_page_directory_structure(unsigned int pid_from, unsigned int pid_to);
+
 
 #endif  /* _KERN_ */
 

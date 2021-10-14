@@ -125,15 +125,9 @@ void sys_fork(void)
     unsigned int forked_id = proc_fork();
     if (forked_id == NUM_IDS) {
         syscall_set_errno(E_MEM);
+        syscall_set_retval1(-1);
         return;
     }
-    unsigned int pid_from = get_curid();
-    unsigned int copy_ret = copy_page_directory_structure(pid_from, forked_id);
-    if (copy_ret == 0) {
-        syscall_set_errno(E_MEM);
-    }
-    else {
-        syscall_set_errno(E_SUCC);
-        syscall_set_retval1(forked_id);
-    }
+    syscall_set_errno(E_SUCC);
+    syscall_set_retval1(forked_id);
 }
