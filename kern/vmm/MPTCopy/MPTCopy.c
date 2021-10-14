@@ -24,7 +24,6 @@
 // Does not copy page tables for unmapped PDEs.
 // Sets COW bit.
 unsigned int copy_page_directory_structure(unsigned int pid_from, unsigned int pid_to){
-    
     // Copy over page directory entries
     unsigned int pde_index, vaddr, new_ptbl, pte_index, addr, page_index, perm, entry;
 
@@ -35,7 +34,7 @@ unsigned int copy_page_directory_structure(unsigned int pid_from, unsigned int p
             if (alloc_ptbl(pid_to, vaddr) == 0) {
                 return 0;
             }
-            for (pte_index = 0; pte_index < 1024; pde_index++) {
+            for (pte_index = 0; pte_index < 1024; pte_index++) {
                 addr = get_ptbl_entry(pid_from, pde_index, pte_index);
                 page_index = addr / PAGESIZE;
                 perm = PTE_P | PTE_U | PTE_COW;
@@ -43,14 +42,13 @@ unsigned int copy_page_directory_structure(unsigned int pid_from, unsigned int p
                 set_ptbl_entry(pid_from, pde_index, pte_index, page_index, perm);
             }
         }
-
     }
     return 1;
 }
 
 unsigned int copy_mem_on_write(unsigned int pid, unsigned int vaddr) {
     unsigned int old_paddr_base, pte_index, pde_index, new_page_index;
-    pte_index = vaddr >> 12;
+    pte_index = (vaddr >> 12) & 0x3FF;
     pde_index = vaddr >> 22; 
     old_paddr_base = ADDR_MASK(get_ptbl_entry(pid, pde_index, pte_index));
     //allocate new page

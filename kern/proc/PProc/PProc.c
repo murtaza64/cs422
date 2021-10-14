@@ -49,17 +49,21 @@ unsigned int proc_fork()
     pid = get_curid();
     unsigned int quota = container_get_quota(pid);
     unsigned int usage = container_get_usage(pid);
+    KERN_DEBUG("parent has quota=%d usage=%d\n", quota, usage);
     unsigned int avail = (quota - usage)/2;
     if (avail == 0) {
         return NUM_IDS;
     }
-
     forked_id = thread_spawn((void *) proc_start_user, pid, avail);
 
-    if (pid != NUM_IDS) {
+    if (forked_id != NUM_IDS) {
         uctx_pool[forked_id] = uctx_pool[pid];
         uctx_pool[forked_id].regs.eax = 0;
+        uctx_pool[forked_id].regs.ebx = 0; //HACK remove??
     }
+    KERN_DEBUG("parent is pid %d\n", pid);
+    KERN_DEBUG("child is pid %d\n", forked_id);
+    KERN_DEBUG("child eax=%d\n", uctx_pool[forked_id].regs.eax);
 
     return forked_id;
 }

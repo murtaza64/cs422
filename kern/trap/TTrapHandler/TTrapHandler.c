@@ -69,6 +69,7 @@ void pgflt_handler(void)
                 KERN_PANIC("Page allocation failed for COW: va = 0x%08x, errno = 0x%08x.\n",
                    fault_va, errno);
             }
+            return;
 
         } else {
             KERN_PANIC("Writing to read-only page: va = %p\n", fault_va);

@@ -18,13 +18,12 @@ cswitch:
 	movl	8(%esp), %edx	/* %edx <- to */
 
 	/* TODO: save the old kernel context */
-	movl	%esp, 0(%eax)
 	movl	%edi, 4(%eax)
 	movl	%esi, 8(%eax)
 	movl	%ebx, 12(%eax)
 	movl	%ebp, 16(%eax)
-	movl	(%esp), %ebx
-	movl	%ebx, 20(%eax)
+	popl	20(%eax);
+	movl	%esp, 0(%eax)
 	/* TODO: load the new kernel context */
 	movl	0(%edx), %esp
 	movl	4(%edx), %edi

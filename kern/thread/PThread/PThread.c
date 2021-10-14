@@ -42,7 +42,7 @@ void thread_yield(void)
     unsigned int curid = get_curid();
     unsigned int nextid = tqueue_dequeue(NUM_IDS);
     if (nextid != NUM_IDS) {
-        KERN_DEBUG("entering thread yield from pid %d to %d\n", curid, nextid);
+        // KERN_DEBUG("entering thread yield from pid %d to %d\n", curid, nextid);
         tcb_set_state(curid, TSTATE_READY);
         if(curid != 1) {
             tqueue_enqueue(NUM_IDS, curid);
@@ -50,7 +50,7 @@ void thread_yield(void)
         tcb_set_state(nextid, TSTATE_RUN);
         set_curid(nextid);
         kctx_switch(curid, nextid);
-        KERN_DEBUG("got to the end of thread yield from pid %d to %d\n", curid, nextid);
+        // KERN_DEBUG("got to the end of thread yield from pid %d to %d\n", curid, nextid);
         set_curid(curid);
     }
 }

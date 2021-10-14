@@ -13,6 +13,8 @@ int main(int argc, char **argv)
     *addr = val;
     yield();
     printf("ding: the new value at address %x: %d\n", addr, *addr);
-
+    unsigned int pid = sys_fork();
+    printf("pid=%d\n", pid);
+    yield();
     return 0;
 }
