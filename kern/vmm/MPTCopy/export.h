@@ -3,7 +3,8 @@
 
 #ifdef _KERN_
 
-void copy_page_directory_structure(unsigned int pid_from, unsigned int pid_to);
+unsigned int copy_page_directory_structure(unsigned int pid_from, unsigned int pid_to);
+unsigned int copy_mem_on_write(unsigned int pid, unsigned int vaddr);
 
 #endif  /* _KERN_ */
 

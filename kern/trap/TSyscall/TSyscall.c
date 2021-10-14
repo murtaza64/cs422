@@ -77,7 +77,6 @@ extern uint8_t _binary___obj_user_fork_test_fork_test_start[];
  */
 void sys_spawn(void)
 {
-    // TODO
     unsigned int elf_id = syscall_get_arg2();
     unsigned int quota = syscall_get_arg3();
     void *elf_addr;
@@ -116,13 +115,25 @@ void sys_spawn(void)
  */
 void sys_yield(void)
 {
-    // TODO
     syscall_set_errno(E_SUCC);
     thread_yield();
 }
 
 // Your implementation of fork
-void sys_fork()
+void sys_fork(void)
 {
-    // TODO
+    unsigned int forked_id = proc_fork();
+    if (forked_id == NUM_IDS) {
+        syscall_set_errno(E_MEM);
+        return;
+    }
+    unsigned int pid_from = get_curid();
+    unsigned int copy_ret = copy_page_directory_structure(pid_from, forked_id);
+    if (copy_ret == 0) {
+        syscall_set_errno(E_MEM);
+    }
+    else {
+        syscall_set_errno(E_SUCC);
+        syscall_set_retval1(forked_id);
+    }
 }

@@ -65,7 +65,10 @@ void pgflt_handler(void)
         pte_entry = get_ptbl_entry_by_va(cur_pid, fault_va);
         if (pte_entry & PTE_COW) {
             // handling copy-on-write
-            // TODO
+            if (copy_mem_on_write(cur_pid, fault_va) == 0) {
+                KERN_PANIC("Page allocation failed for COW: va = 0x%08x, errno = 0x%08x.\n",
+                   fault_va, errno);
+            }
 
         } else {
             KERN_PANIC("Writing to read-only page: va = %p\n", fault_va);
@@ -94,7 +97,6 @@ void pgflt_handler(void)
  */
 void exception_handler(void)
 {
-    // TODO
     unsigned int cur_pid = get_curid();
     switch (uctx_pool[cur_pid].trapno) {
         case T_PGFLT:
@@ -128,7 +130,6 @@ static int default_intr_handler(void)
  */
 void interrupt_handler(void)
 {
-    // TODO
     unsigned int cur_pid = get_curid();
     switch (uctx_pool[cur_pid].trapno) {
         case T_IRQ0 + IRQ_SPURIOUS:
