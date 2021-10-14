@@ -19,10 +19,15 @@ int main(int argc, char **argv)
     else
         printf("Failed to launch pong.\n");
 
-    if ((ding_pid = spawn(3, 1000)) != -1)
-        printf("ding in process %d.\n", ding_pid);
+    if ((ding_pid = spawn(4, 1000)) != -1)
+        printf("fork in process %d.\n", ding_pid);
     else
-        printf("Failed to launch ding.\n");
+        printf("Failed to launch fork.\n");
+
+    // if ((ding_pid = spawn(3, 1000)) != -1)
+    //     printf("ding in process %d.\n", ding_pid);
+    // else
+    //     printf("Failed to launch ding.\n");
 
     return 0;
 }
