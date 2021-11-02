@@ -3,6 +3,8 @@
 #include <lib/debug.h>
 #include <lib/spinlock.h>
 
+#include <lib/io_lock.h>
+
 #include "video.h"
 #include "console.h"
 #include "serial.h"
@@ -21,6 +23,8 @@ void cons_init()
     memset(&cons, 0x0, sizeof(cons));
     serial_init();
     video_init();
+    output_spinlock_init();
+    input_spinlock_init();
 }
 
 void cons_intr(int (*proc)(void))
@@ -73,11 +77,14 @@ char getchar(void)
 
 void putchar(char c)
 {
+    output_lock();
     cons_putc(c);
+    output_unlock();
 }
 
 char *readline(const char *prompt)
 {
+    input_lock();
     int i;
     char c;
 
@@ -102,4 +109,5 @@ char *readline(const char *prompt)
             return linebuf;
         }
     }
+    input_unlock();
 }

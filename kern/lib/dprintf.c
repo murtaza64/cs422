@@ -6,6 +6,8 @@
 #include <lib/debug.h>
 #include <lib/stdarg.h>
 
+#include <lib/io_lock.h>
+
 struct dprintbuf {
     int idx;  /* current buffer index */
     int cnt;  /* total bytes printed so far */
@@ -33,6 +35,8 @@ static void putch(int ch, struct dprintbuf *b)
 
 int vdprintf(const char *fmt, va_list ap)
 {
+    output_lock();
+
     struct dprintbuf b;
 
     b.idx = 0;
@@ -41,6 +45,8 @@ int vdprintf(const char *fmt, va_list ap)
 
     b.buf[b.idx] = 0;
     cputs(b.buf);
+
+    output_unlock();
 
     return b.cnt;
 }

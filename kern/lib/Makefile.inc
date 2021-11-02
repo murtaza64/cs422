@@ -2,6 +2,7 @@
 
 OBJDIRS += $(KERN_OBJDIR)/lib
 
+KERN_SRCFILES += $(KERN_DIR)/lib/io_lock.c
 KERN_SRCFILES += $(KERN_DIR)/lib/string.c
 KERN_SRCFILES += $(KERN_DIR)/lib/debug.c
 KERN_SRCFILES += $(KERN_DIR)/lib/dprintf.c
@@ -15,6 +16,7 @@ KERN_SRCFILES += $(KERN_DIR)/lib/elf.c
 KERN_SRCFILES += $(KERN_DIR)/lib/kstack.c
 KERN_SRCFILES += $(KERN_DIR)/lib/spinlock.c
 KERN_SRCFILES += $(KERN_DIR)/lib/reentrant_lock.c
+
 
 $(KERN_OBJDIR)/lib/%.o: $(KERN_DIR)/lib/%.c
 	@echo + cc[KERN/lib] $<

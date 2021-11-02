@@ -123,6 +123,7 @@ void serial_init(void)
     serial_exists = (inb(COM1 + COM_LSR) != 0xFF);
     (void) inb(COM1 + COM_IIR);
     (void) inb(COM1 + COM_RX);
+
 }
 
 void serial_intenable(void)
