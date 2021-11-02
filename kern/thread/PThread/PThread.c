@@ -7,7 +7,11 @@
 
 #include "import.h"
 
+#define INTERRUPT_INTERVAL 1000/LAPIC_TIMER_INTR_FREQ
+
 spinlock_t thread_lock;
+
+unsigned int time_since_yield[NUM_CPUS];
 
 void thread_init(unsigned int mbi_addr)
 {
@@ -15,6 +19,7 @@ void thread_init(unsigned int mbi_addr)
     set_curid(0);
     tcb_set_state(0, TSTATE_RUN);
     spinlock_init(&thread_lock);
+    time_since_yield[get_pcpu_idx()] = 0;
 }
 
 /**
@@ -60,9 +65,31 @@ void thread_yield(void)
     tcb_set_state(new_cur_pid, TSTATE_RUN);
     set_curid(new_cur_pid);
 
+
+    spinlock_release(&thread_lock);
     if (old_cur_pid != new_cur_pid) {
         kctx_switch(old_cur_pid, new_cur_pid);
     }
 
-    spinlock_release(&thread_lock);
 }
+
+void sched_update(void)
+{
+    unsigned int cpu_id = get_pcpu_idx();
+    time_since_yield[cpu_id] += INTERRUPT_INTERVAL;
+    if (time_since_yield[cpu_id] >= SCHED_SLICE) {
+        time_since_yield[cpu_id] = 0;
+        thread_yield();
+        // if (cpu_id == 0) {
+        //     KERN_DEBUG("CPU0 YIELDS (????)\n");
+        // }
+        // if (cpu_id == 1) {
+        //     KERN_DEBUG("CPU1 YIELDS\n");
+        // }
+        // if (cpu_id == 2) {
+        //     KERN_DEBUG("CPU2 YIELDS\n");
+        // }
+    }
+
+}
+
