@@ -12,9 +12,11 @@ int main(int argc, char **argv)
         produce();
 
     // slow producing
-    for (i = 0; i < 8000; i++) {
-        if (i % 120 == 0)
+    for (i = 0; i < 8000000; i++) {
+        if (i % 100000 == 0) {
+            printf("produce %d \n", i/100000);
             produce();
+        }
     }
 
     return 0;

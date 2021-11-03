@@ -57,6 +57,9 @@ void thread_yield(void)
     unsigned int old_cur_pid = get_curid();
 
     spinlock_acquire(&thread_lock);
+    #ifdef SHOW_LOCKING
+    KERN_DEBUG("acquired thread lock cpu %d pid %d\n", get_pcpu_idx(), get_curid());
+    #endif
 
     tcb_set_state(old_cur_pid, TSTATE_READY);
     tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
@@ -66,27 +69,32 @@ void thread_yield(void)
     set_curid(new_cur_pid);
 
 
-    spinlock_release(&thread_lock);
+    spinlock_release(&thread_lock); //does moving this after the ctx switch kill us?
+    //note: i made the necessary changes to pproc
     if (old_cur_pid != new_cur_pid) {
         kctx_switch(old_cur_pid, new_cur_pid);
     }
-
+    #ifdef SHOW_LOCKING
+    KERN_DEBUG("released thread lock cpu %d pid %d\n", get_pcpu_idx(), get_curid());
+    #endif
 }
 //yields to another thread WITHOUT euqueueing current thread on ready queue
-void thread_cv_yield(spinlock_t *lock)
+void thread_cv_suspend(spinlock_t *lock)
 {
     unsigned int new_cur_pid;
     unsigned int old_cur_pid = get_curid();
-    intr_local_disable(); //is this the right way to do it?
+    // intr_local_disable(); //interrupts now disabled in cv wait
     spinlock_acquire(&thread_lock);
 
-    tcb_set_state(old_cur_pid, TSTATE_SLEEP); //not sure about this
+    tcb_set_state(old_cur_pid, TSTATE_SLEEP);
+
+    // tcb_set_state(old_cur_pid, TSTATE_SLEEP); //not sure about this
     // tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
 
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
 
-    if (new_cur_pid == NUM_IDS) {
-        return;
+    if (new_cur_pid == NUM_IDS) { //TODO what to do here? (no other threads ready)
+        KERN_PANIC("no thread on ready queue");
     }
 
     tcb_set_state(new_cur_pid, TSTATE_RUN);
@@ -95,11 +103,14 @@ void thread_cv_yield(spinlock_t *lock)
 
     spinlock_release(&thread_lock);
     spinlock_release(lock);
+
+    //TODO: what happens if another process wakes up this thread before the 
+    //context switch occurs??? Will the thread be alive on 2 cpus at once with the wrong
+    //state on the kernel stack, and thus yield to the same thread on two cpus?
     if (old_cur_pid != new_cur_pid) { //this if should always trigger
         kctx_switch(old_cur_pid, new_cur_pid);
     }
     spinlock_acquire(lock);
-    intr_local_enable();
 
 }
 
@@ -109,16 +120,10 @@ void sched_update(void)
     time_since_yield[cpu_id] += INTERRUPT_INTERVAL;
     if (time_since_yield[cpu_id] >= SCHED_SLICE) {
         time_since_yield[cpu_id] = 0;
+        #ifdef SHOW_TIMER
+        KERN_DEBUG("timer yield in cpu %d pid %d\n", get_pcpu_idx(), get_curid());
+        #endif
         thread_yield();
-        // if (cpu_id == 0) {
-        //     KERN_DEBUG("CPU0 YIELDS (????)\n");
-        // }
-        // if (cpu_id == 1) {
-        //     KERN_DEBUG("CPU1 YIELDS\n");
-        // }
-        // if (cpu_id == 2) {
-        //     KERN_DEBUG("CPU2 YIELDS\n");
-        // }
     }
 
 }

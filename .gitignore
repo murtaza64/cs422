@@ -22,3 +22,5 @@ eject.sh
 *.cerr
 .gdbinit
 .vscode/
+/*.txt
+make.sh

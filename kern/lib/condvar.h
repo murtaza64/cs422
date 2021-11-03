@@ -7,17 +7,23 @@
 #include <lib/types.h>
 #include <lib/x86.h>
 #include <lib/spinlock.h>
+#include <dev/intr.h>
+
+typedef struct {
+    unsigned short pid;
+    unsigned short cpu_idx;
+} threadinfo_t;
 
 typedef struct {
     unsigned short front;
     unsigned short back;
-    unsigned int pid_array[NUM_IDS];
+    threadinfo_t thread_array[NUM_IDS];
     unsigned int n_pids;
 } cvqueue_t;
 
 typedef struct {
     cvqueue_t queue;
-    spinlock_t lock;
+    // spinlock_t lock;
 } condvar_t;
 
 
@@ -30,7 +36,7 @@ void condvar_broadcast(condvar_t *cv);
 void cvqueue_init(cvqueue_t *cvq);
 unsigned int cvqueue_is_empty(cvqueue_t *cvq);
 unsigned int cvqueue_enqueue(cvqueue_t *cvq, unsigned int pid);
-unsigned int cvqueue_dequeue(cvqueue_t *cvq);
+threadinfo_t cvqueue_dequeue(cvqueue_t *cvq);
 
 #endif
 #endif

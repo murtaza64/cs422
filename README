@@ -1,5 +1,10 @@
 pthread.c:
     optimize--placement and number of locks?
+    move lock outside of ctx switch and add to proc_user_start?
+condvar.c, bbuf.c:
+    set up kernel panics?
+misc:
+    why is one processor just like kinda slow?
 
 Collaborators: Murtaza Javaid, Daniel Li
 Coded this assignment together: Yes

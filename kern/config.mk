@@ -243,3 +243,10 @@ endif
 ifneq "$(TEST)" ""
 KERN_DEBUG_FLAGS += -DTEST
 endif
+
+ifneq "$(SHOW_LOCKING)" ""
+KERN_DEBUG_FLAGS += -DSHOW_LOCKING
+endif
+ifneq "$(SHOW_TIMER)" ""
+KERN_DEBUG_FLAGS += -DSHOW_TIMER
+endif

@@ -4,6 +4,7 @@
 #include <lib/seg.h>
 #include <lib/trap.h>
 #include <lib/x86.h>
+#include <lib/spinlock.h>
 #include <pcpu/PCPUIntro/export.h>
 
 #include "import.h"
@@ -11,6 +12,7 @@
 extern tf_t uctx_pool[NUM_IDS];
 
 extern unsigned int last_active[NUM_CPUS];
+extern spinlock_t thread_lock;
 
 void proc_start_user(void)
 {
@@ -20,6 +22,9 @@ void proc_start_user(void)
     kstack_switch(cur_pid);
     set_pdir_base(cur_pid);
     last_active[cpu_idx] = cur_pid;
+
+    spinlock_release(&thread_lock);
+    KERN_DEBUG("(start) released thread lock cpu %d pid %d\n", get_pcpu_idx(), get_curid());
 
     trap_return((void *) &uctx_pool[cur_pid]);
 }

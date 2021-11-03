@@ -9,7 +9,7 @@ unsigned int thread_spawn(void *entry, unsigned int id,
                           unsigned int quota);
 void thread_yield(void);
 void sched_update(void);
-void thread_cv_yield(spinlock_t *lock);
+void thread_cv_suspend(spinlock_t *lock);
 
 #endif  /* _KERN_ */
 
