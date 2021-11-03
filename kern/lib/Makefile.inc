@@ -3,6 +3,8 @@
 OBJDIRS += $(KERN_OBJDIR)/lib
 
 KERN_SRCFILES += $(KERN_DIR)/lib/io_lock.c
+KERN_SRCFILES += $(KERN_DIR)/lib/condvar.c
+KERN_SRCFILES += $(KERN_DIR)/lib/bbuf.c
 KERN_SRCFILES += $(KERN_DIR)/lib/string.c
 KERN_SRCFILES += $(KERN_DIR)/lib/debug.c
 KERN_SRCFILES += $(KERN_DIR)/lib/dprintf.c

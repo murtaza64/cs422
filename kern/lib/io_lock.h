@@ -3,6 +3,12 @@
 
 #include <lib/io_lock.h>
 
+void debug_spinlock_init(void);
+
+void debug_lock(void);
+
+void debug_unlock(void);
+
 void input_spinlock_init(void);
 
 void input_lock(void);

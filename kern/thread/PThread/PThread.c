@@ -4,7 +4,7 @@
 #include <lib/debug.h>
 #include <dev/lapic.h>
 #include <pcpu/PCPUIntro/export.h>
-
+#include <dev/intr.h>
 #include "import.h"
 
 #define INTERRUPT_INTERVAL 1000/LAPIC_TIMER_INTR_FREQ
@@ -70,6 +70,36 @@ void thread_yield(void)
     if (old_cur_pid != new_cur_pid) {
         kctx_switch(old_cur_pid, new_cur_pid);
     }
+
+}
+//yields to another thread WITHOUT euqueueing current thread on ready queue
+void thread_cv_yield(spinlock_t *lock)
+{
+    unsigned int new_cur_pid;
+    unsigned int old_cur_pid = get_curid();
+    intr_local_disable(); //is this the right way to do it?
+    spinlock_acquire(&thread_lock);
+
+    tcb_set_state(old_cur_pid, TSTATE_SLEEP); //not sure about this
+    // tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
+
+    new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
+
+    if (new_cur_pid == NUM_IDS) {
+        return;
+    }
+
+    tcb_set_state(new_cur_pid, TSTATE_RUN);
+    set_curid(new_cur_pid);
+
+
+    spinlock_release(&thread_lock);
+    spinlock_release(lock);
+    if (old_cur_pid != new_cur_pid) { //this if should always trigger
+        kctx_switch(old_cur_pid, new_cur_pid);
+    }
+    spinlock_acquire(lock);
+    intr_local_enable();
 
 }
 

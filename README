@@ -1,2 +1,17 @@
 pthread.c:
     optimize--placement and number of locks?
+
+Collaborators: Murtaza Javaid, Daniel Li
+Coded this assignment together: Yes
+Brief description of what you have implemented:
+    Part 1: Added trap handlers for new trap numbers and inserted appropriate spin locks
+    in serial, console, dprintf and debug. Created a debug, input and output lock for these
+    layers.
+
+    Part 2: Implemented a clock timer that stops the current thread and switches to a new thread
+    every SCHED_SLICE ms. Yield to the next thread on the queue and added locks in thread_spawn and thread_yield.
+
+    Part 3: Added new interrupts enablers and disablers to enable interrupts for
+    sys_produce, sys_consume and also when they print using kern debug. Also modified sys_spawn to 
+    identify new errors for exceeding quota, reaching max number of children and having an invalid child
+    id in sys_spawn.

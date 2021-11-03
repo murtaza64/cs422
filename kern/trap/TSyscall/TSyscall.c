@@ -81,6 +81,7 @@ void sys_spawn(tf_t *tf)
     unsigned int new_pid;
     unsigned int elf_id, quota;
     void *elf_addr;
+    unsigned int curid = get_curid();
 
     elf_id = syscall_get_arg2(tf);
     quota = syscall_get_arg3(tf);
@@ -104,7 +105,13 @@ void sys_spawn(tf_t *tf)
     new_pid = proc_create(elf_addr, quota);
 
     if (new_pid == NUM_IDS) {
-        syscall_set_errno(tf, E_INVAL_PID);
+        if (!container_can_consume (curid, quota)) {
+            syscall_set_errno(tf, E_EXCEEDS_QUOTA);
+        } else if (container_get_nchildren(curid) >= MAX_CHILDREN) {
+            syscall_set_errno(tf, E_MAX_NUM_CHILDEN_REACHED);
+        } else {
+            syscall_set_errno(tf, E_INVAL_CHILD_ID);
+        }
         syscall_set_retval1(tf, NUM_IDS);
     } else {
         syscall_set_errno(tf, E_SUCC);
@@ -131,6 +138,7 @@ void sys_produce(tf_t *tf)
         intr_local_disable();
         KERN_DEBUG("CPU %d: Process %d: Produced %d\n", get_pcpu_idx(), get_curid(), i);
         intr_local_enable();
+        
     }
     syscall_set_errno(tf, E_SUCC);
 }

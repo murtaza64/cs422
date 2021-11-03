@@ -8,12 +8,12 @@ int main(int argc, char **argv)
     printf("ping started.\n");
 
     // fast producing
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 0; i++)
         produce();
 
     // slow producing
-    for (i = 0; i < 40; i++) {
-        if (i % 4 == 0)
+    for (i = 0; i < 8000; i++) {
+        if (i % 120 == 0)
             produce();
     }
 
