@@ -17,7 +17,8 @@ void input_unlock(void);
 
 void output_spinlock_init(void);
 
-void output_lock(void);
+//returns 1 if the lock was aquired, 0 if already held
+int output_lock(void);
 
 void output_unlock(void);
 

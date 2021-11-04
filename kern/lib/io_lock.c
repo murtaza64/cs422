@@ -35,8 +35,12 @@ void output_spinlock_init(void) {
     spinlock_init(&output_lk);
 }
 
-void output_lock(void) {
-    spinlock_acquire(&output_lk);
+int output_lock(void) {
+    if (!spinlock_holding(&output_lk)) {
+        spinlock_acquire(&output_lk);
+        return 1;
+    }
+    return 0;
 }
 
 void output_unlock(void) {

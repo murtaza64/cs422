@@ -24,7 +24,7 @@ void proc_start_user(void)
     last_active[cpu_idx] = cur_pid;
 
     spinlock_release(&thread_lock);
-    KERN_DEBUG("(start) released thread lock cpu %d pid %d\n", get_pcpu_idx(), get_curid());
+    KERN_DEBUG("proc_start: released thread lock cpu %d pid %d\n", get_pcpu_idx(), get_curid());
 
     trap_return((void *) &uctx_pool[cur_pid]);
 }

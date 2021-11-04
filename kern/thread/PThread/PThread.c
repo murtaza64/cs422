@@ -5,9 +5,12 @@
 #include <dev/lapic.h>
 #include <pcpu/PCPUIntro/export.h>
 #include <dev/intr.h>
+// #include <lib/dprintf.h>
 #include "import.h"
 
 #define INTERRUPT_INTERVAL 1000/LAPIC_TIMER_INTR_FREQ
+
+extern int dprintf(const char *fmt, ...);
 
 spinlock_t thread_lock;
 
@@ -19,7 +22,9 @@ void thread_init(unsigned int mbi_addr)
     set_curid(0);
     tcb_set_state(0, TSTATE_RUN);
     spinlock_init(&thread_lock);
-    time_since_yield[get_pcpu_idx()] = 0;
+    for (int i = 0; i < NUM_CPUS; i++) {
+        time_since_yield[i] = 0;
+    }
 }
 
 /**
@@ -58,24 +63,29 @@ void thread_yield(void)
 
     spinlock_acquire(&thread_lock);
     #ifdef SHOW_LOCKING
-    KERN_DEBUG("acquired thread lock cpu %d pid %d\n", get_pcpu_idx(), get_curid());
+    dprintf("[SCHED] yield (cpu %d pid %d): acquired thread lock \n", get_pcpu_idx(), get_curid());
     #endif
 
     tcb_set_state(old_cur_pid, TSTATE_READY);
     tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
 
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
+
+    #ifdef SHOW_LOCKING
+    dprintf("[SCHED] yield (cpu %d pid %d): yielding to %d \n", get_pcpu_idx(), get_curid(),new_cur_pid);
+    #endif
+
     tcb_set_state(new_cur_pid, TSTATE_RUN);
     set_curid(new_cur_pid);
 
 
-    spinlock_release(&thread_lock); //does moving this after the ctx switch kill us?
-    //note: i made the necessary changes to pproc
     if (old_cur_pid != new_cur_pid) {
         kctx_switch(old_cur_pid, new_cur_pid);
     }
+    spinlock_release(&thread_lock); //does moving this after the ctx switch kill us?
+    //note: i made the necessary changes to pproc
     #ifdef SHOW_LOCKING
-    KERN_DEBUG("released thread lock cpu %d pid %d\n", get_pcpu_idx(), get_curid());
+    dprintf("[SCHED] yield (cpu %d pid %d): released sched lock\n", get_pcpu_idx(), get_curid());
     #endif
 }
 //yields to another thread WITHOUT euqueueing current thread on ready queue
@@ -85,13 +95,19 @@ void thread_cv_suspend(spinlock_t *lock)
     unsigned int old_cur_pid = get_curid();
     // intr_local_disable(); //interrupts now disabled in cv wait
     spinlock_acquire(&thread_lock);
-
+    #ifdef SHOW_LOCKING
+    dprintf("[SCHED] suspend (cpu %d pid %d): acquired sched lock\n", get_pcpu_idx(), get_curid());
+    #endif
     tcb_set_state(old_cur_pid, TSTATE_SLEEP);
 
     // tcb_set_state(old_cur_pid, TSTATE_SLEEP); //not sure about this
     // tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
 
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
+    
+    #ifdef SHOW_LOCKING
+    dprintf("[SCHED] suspend (cpu %d pid %d): releasing cv lock and yielding to %d \n", get_pcpu_idx(), get_curid(), new_cur_pid);
+    #endif
 
     if (new_cur_pid == NUM_IDS) { //TODO what to do here? (no other threads ready)
         KERN_PANIC("no thread on ready queue");
@@ -99,9 +115,6 @@ void thread_cv_suspend(spinlock_t *lock)
 
     tcb_set_state(new_cur_pid, TSTATE_RUN);
     set_curid(new_cur_pid);
-
-
-    spinlock_release(&thread_lock);
     spinlock_release(lock);
 
     //TODO: what happens if another process wakes up this thread before the 
@@ -110,7 +123,12 @@ void thread_cv_suspend(spinlock_t *lock)
     if (old_cur_pid != new_cur_pid) { //this if should always trigger
         kctx_switch(old_cur_pid, new_cur_pid);
     }
-    spinlock_acquire(lock);
+
+    spinlock_release(&thread_lock);
+    
+    #ifdef SHOW_LOCKING
+    dprintf("[SCHED] suspend (cpu %d pid %d): released sched lock\n", get_pcpu_idx(), get_curid());
+    #endif
 
 }
 
@@ -121,7 +139,7 @@ void sched_update(void)
     if (time_since_yield[cpu_id] >= SCHED_SLICE) {
         time_since_yield[cpu_id] = 0;
         #ifdef SHOW_TIMER
-        KERN_DEBUG("timer yield in cpu %d pid %d\n", get_pcpu_idx(), get_curid());
+        dprintf("[TIMER] (cpu %d pid %d): timer interrupt calling yield\n", get_pcpu_idx(), get_curid());
         #endif
         thread_yield();
     }

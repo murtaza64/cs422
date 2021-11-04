@@ -5,17 +5,19 @@
 int main(int argc, char **argv)
 {
     unsigned int i;
-    printf("ping started.\n");
+    unsigned int item;
+    printf("[USER] ping started.\n");
 
     // fast producing
-    for (i = 0; i < 0; i++)
-        produce();
+    // for (i = 0; i < 0; i++)
+    //     produce();
 
     // slow producing
     for (i = 0; i < 8000000; i++) {
-        if (i % 100000 == 0) {
-            printf("produce %d \n", i/100000);
-            produce();
+        if (i % 1 == 0) {
+            item = i*3+1;
+            printf("[USER] produce i=%d item=%d \n", i/1, item);
+            produce(item);
         }
     }
 

@@ -22,6 +22,7 @@ typedef struct {
 } bbuf_t;
 
 void bbuf_init(bbuf_t *bbuf);
+void bbuf_init_wrapper();
 unsigned int bbuf_remove(bbuf_t *bbuf);
 void bbuf_insert(bbuf_t *bbuf, unsigned int item);
 

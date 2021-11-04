@@ -18,7 +18,7 @@ typedef struct {
     unsigned short front;
     unsigned short back;
     threadinfo_t thread_array[NUM_IDS];
-    unsigned int n_pids;
+    unsigned int n_items;
 } cvqueue_t;
 
 typedef struct {

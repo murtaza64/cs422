@@ -6,10 +6,12 @@
 #include <lib/syscall.h>
 #include <dev/intr.h>
 #include <pcpu/PCPUIntro/export.h>
+#include <lib/bbuf.h>
 
 #include "import.h"
 
 static char sys_buf[NUM_IDS][PAGESIZE];
+extern bbuf_t bbuf;
 
 /**
  * Copies a string from user into buffer and prints it to the screen.
@@ -133,23 +135,34 @@ void sys_yield(tf_t *tf)
 
 void sys_produce(tf_t *tf)
 {
-    unsigned int i;
-    for (i = 0; i < 5; i++) {
-        intr_local_disable();
-        KERN_DEBUG("CPU %d: Process %d: Produced %d\n", get_pcpu_idx(), get_curid(), i);
-        intr_local_enable();
+    // unsigned int i;
+    // for (i = 0; i < 5; i++) {
+    //     KERN_DEBUG("CPU %d: Process %d: Produced %d\n", get_pcpu_idx(), get_curid(), i);
+    //     intr_local_enable();
         
-    }
+    // }
+    //     
+    unsigned int item = syscall_get_arg2(tf);
+    bbuf_insert(&bbuf, item);
+    intr_local_disable();
+    dprintf("[PRODUCE] (CPU %d Process %d) produced == %d (added to bbuf)\n", get_pcpu_idx(), get_curid(), item);
+    intr_local_enable();
     syscall_set_errno(tf, E_SUCC);
 }
 
 void sys_consume(tf_t *tf)
 {
-    unsigned int i;
-    for (i = 0; i < 5; i++) {
-        intr_local_disable();
-        KERN_DEBUG("CPU %d: Process %d: Consumed %d\n", get_pcpu_idx(), get_curid(), i);
-        intr_local_enable();
-    }
+    // unsigned int i;
+    // for (i = 0; i < 5; i++) {
+    //     intr_local_disable();
+    //     KERN_DEBUG("CPU %d: Process %d: Consumed %d\n", get_pcpu_idx(), get_curid(), i);
+    //     intr_local_enable();
+    // }
+    unsigned int item;
+    item = bbuf_remove(&bbuf);
+    intr_local_disable();
+    dprintf("[CONSUME] (CPU %d Process %d) consumed == %d (pulled from bbuf)\n", get_pcpu_idx(), get_curid(), item);
+    intr_local_enable();
+    syscall_set_retval1(tf, item);
     syscall_set_errno(tf, E_SUCC);
 }

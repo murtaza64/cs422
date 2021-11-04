@@ -35,7 +35,7 @@ static void putch(int ch, struct dprintbuf *b)
 
 int vdprintf(const char *fmt, va_list ap)
 {
-    output_lock();
+    unsigned int lock_acquired = output_lock();
 
     struct dprintbuf b;
 
@@ -46,7 +46,9 @@ int vdprintf(const char *fmt, va_list ap)
     b.buf[b.idx] = 0;
     cputs(b.buf);
 
-    output_unlock();
+    if (lock_acquired) {
+        output_unlock();
+    }
 
     return b.cnt;
 }

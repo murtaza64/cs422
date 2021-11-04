@@ -6,6 +6,7 @@
 #include <lib/kstack.h>
 #include <lib/trap.h>
 #include <vmm/MPTInit/export.h>
+#include <lib/bbuf.h>
 
 #include "console.h"
 #include "mboot.h"
@@ -39,6 +40,10 @@ void devinit(uintptr_t mbi_addr)
     trap_init(0);
 
     pmmap_init(mbi_addr);
+
+    //init various locks and data structures
+    bbuf_init_wrapper();
+    
 }
 
 void devinit_ap(void)
