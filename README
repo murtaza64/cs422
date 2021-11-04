@@ -20,3 +20,578 @@ Brief description of what you have implemented:
     sys_produce, sys_consume and also when they print using kern debug. Also modified sys_spawn to 
     identify new errors for exceeding quota, reaching max number of children and having an invalid child
     id in sys_spawn.
+
+    Part 4: Implemented a waiting queue for producers and consumers using cvqueue. The threads on the ready queue
+    are sent into the bounded buffer through produce and consume. If the buffer is full, then the produce thread is 
+    set to sleep on the producer waiting queue until the item_removed cv is true. If the buffer is empty, then the 
+    consumer thread is set to sleep in the consumer waiting queue until the item_added cv is true. Buffer is
+    created by us, relies on the empty and full condition variables.
+
+    DEBUG output:
+
+        # 3 types of locks: debug, output, input
+
+        # Process 1 producing and adding to the bbuf
+        [D] kern/proc/PProc/PProc.c:27: proc_start: released thread lock cpu 1 pid 1
+        From cpu 1: [USER] ping started.
+        From cpu 1: [USER] produce i=0 item=1 
+        [D] kern/lib/bbuf.c:86: [BBUF] thread 1 acquiring bbuf spinlock... 
+        [D] kern/lib/bbuf.c:94: [BBUF] thread 1 acquired bbuf spinlock
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 1 items
+        [D] kern/lib/bbuf.c:122: [BBUF] thread 1 released bbuf spinlock
+        [PRODUCE] (CPU 1 Process 1) produced == 1 (added to bbuf)
+        From cpu 1: [USER] produce i=1 item=4 
+        [D] kern/lib/bbuf.c:86: [BBUF] thread 1 acquiring bbuf spinlock... 
+        [D] kern/lib/bbuf.c:94: [BBUF] thread 1 acquired bbuf spinlock
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 2 items
+        [D] kern/lib/bbuf.c:122: [BBUF] thread 1 released bbuf spinlock
+        [PRODUCE] (CPU 1 Process 1) produced == 4 (added to bbuf)
+        ...
+        From cpu 1: [USER] produce i=15 item=46 
+        [D] kern/lib/bbuf.c:86: [BBUF] thread 1 acquiring bbuf spinlock... 
+        [D] kern/lib/bbuf.c:94: [BBUF] thread 1 acquired bbuf spinlock
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [D] kern/lib/bbuf.c:122: [BBUF] thread 1 released bbuf spinlock
+        [PRODUCE] (CPU 1 Process 1) produced == 46 (added to bbuf)
+        From cpu 1: [USER] produce i=16 item=49 
+        [D] kern/lib/bbuf.c:86: [BBUF] thread 1 acquiring bbuf spinlock... 
+        [D] kern/lib/bbuf.c:94: [BBUF] thread 1 acquired bbuf spinlock
+
+        # Bbuf is full so the next produce from thread 1 is put on the waiting queue, waiting for the cv
+        # Spin lock acquired and released by thread 2,
+        [BBUF] thread 1 waiting on item_removed
+        [SCHED] suspend (cpu 1 pid 1): acquired sched lock
+        [SCHED] suspend (cpu 1 pid 1): releasing cv lock and yielding to 2 
+        [SCHED] yield (cpu 1 pid 2): released sched lock
+        [D] kern/lib/bbuf.c:94: [BBUF] thread 2 acquired bbuf spinlock
+
+        # Bbuf is full so the next produce from thread 2 is put on the waiting queue, waiting for the cv
+        [BBUF] thread 2 waiting on item_removed
+
+        # TIMER forces cpu 2 to yield
+        [TIMER] (cpu 2 pid 4): timer interrupt calling yield
+        [D] kern/dev/lapic.c:117: [1] Retry to calibrate internal timer of LAPIC.
+        [SCHED] suspend (cpu 1 pid 2): acquired sched lock
+        [SCHED] suspend (cpu 1 pid 2): releasing cv lock and yielding to 3 
+        [SCHED] yield (cpu 1 pid 3): released sched lock
+        [SCHED] yield (cpu 2 pid 4): acquired thread lock 
+        [SCHED] yield (cpu 2 pid 4): yielding to 5 
+        [D] kern/proc/PProc/PProc.c:27: proc_start: released thread lock cpu 2 pid 5
+        [TIMER] (cpu 1 pid 3): timer interrupt calling yield
+        [SCHED] yield (cpu 1 pid 3): acquired thread lock 
+        [SCHED] yield (cpu 1 pid 3): yielding to 3 
+        [SCHED] yield (cpu 1 pid 3): released sched lock
+        From cpu 2: pong started.
+        [D] kern/lib/bbuf.c:46: [BBUF] thread 5 acquiring bbuf spinlock... 
+        [D] kern/lib/bbuf.c:52: [BBUF] thread 5 acquired bbuf spinlock
+        [TIMER] (cpu 2 pid 5): timer interrupt calling yield
+        [SCHED] yield (cpu 2 pid 5): acquired thread lock 
+        [SCHED] yield (cpu 2 pid 5): yielding to 6 
+        [D] kern/proc/PProc/PProc.c:27: proc_start: released thread lock cpu 2 pid 6
+        [TIMER] (cpu 1 pid 3): timer interrupt calling yield
+        [SCHED] yield (cpu 1 pid 3): acquired thread lock 
+        [SCHED] yield (cpu 1 pid 3): yielding to 3 
+        [SCHED] yield (cpu 1 pid 3): released sched lock
+        [D] kern/dev/lapic.c:117: [2] Retry to calibrate internal timer of LAPIC.
+        [TIMER] (cpu 1 pid 3): timer interrupt calling yield
+        [SCHED] yield (cpu 1 pid 3): acquired thread lock 
+        [SCHED] yield (cpu 1 pid 3): yielding to 3 
+        [SCHED] yield (cpu 1 pid 3): released sched lock
+        [TIMER] (cpu 2 pid 6): timer interrupt calling yield
+        [SCHED] yield (cpu 2 pid 6): acquired thread lock 
+        [SCHED] yield (cpu 2 pid 6): yielding to 4 
+        [SCHED] yield (cpu 2 pid 4): released sched lock
+        [TIMER] (cpu 1 pid 3): timer interrupt calling yield
+        [SCHED] yield (cpu 1 pid 3): acquired thread lock 
+        [SCHED] yield (cpu 1 pid 3): yielding to 3 
+        [SCHED] yield (cpu 1 pid 3): released sched lock
+        [TIMER] (cpu 2 pid 4): timer interrupt calling yield
+        [SCHED] yield (cpu 2 pid 4): acquired thread lock 
+        [SCHED] yield (cpu 2 pid 4): yielding to 5 
+        [SCHED] yield (cpu 2 pid 5): released sched lock
+        [D] kern/dev/lapic.c:117: [3] Retry to calibrate internal timer of LAPIC.
+        [TIMER] (cpu 1 pid 3): timer interrupt calling yield
+        [SCHED] yield (cpu 1 pid 3): acquired thread lock 
+        [SCHED] yield (cpu 1 pid 3): yielding to 3 
+        [SCHED] yield (cpu 1 pid 3): released sched lock
+
+        # consume removes from the bbuf and sets the cv allowing thread 1 to wake up again
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [D] kern/lib/condvar.c:55: condvar_signal: found waiting thread 1 (was on cpu 1)
+        [D] kern/lib/condvar.c:64: condvar_signal: complete (pid 5)
+        [D] kern/lib/bbuf.c:76: [BBUF] thread 5 released bbuf spinlock
+        [TIMER] (cpu 1 pid 3): timer interrupt calling yield
+        [SCHED] yield (cpu 1 pid 3): acquired thread lock 
+        [SCHED] yield (cpu 1 pid 3): yielding to 1 
+        [SCHED] suspend (cpu 1 pid 1): released sched lock
+        [D] kern/lib/condvar.c:43: [BBUF] wait (cpu 1 pid 1): reaquired bbuf lock
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [D] kern/lib/bbuf.c:122: [BBUF] thread 1 released bbuf spinlock
+        [PRODUCE] (CPU 1 Process 1) produced == 49 (added to bbuf)
+        From cpu 1: [USER] produce i=17 item=52 
+        [D] kern/lib/bbuf.c:86: [BBUF] thread 1 acquiring bbuf spinlock... 
+        [D] kern/lib/bbuf.c:94: [BBUF] thread 1 acquired bbuf spinlock
+        [BBUF] thread 1 waiting on item_removed
+        [SCHED] suspend (cpu 1 pid 1): acquired sched lock
+        [SCHED] suspend (cpu 1 pid 1): releasing cv lock and yielding to 3 
+        [SCHED] yield (cpu 1 pid 3): released sched lock
+        [TIMER] (cpu 2 pid 5): timer interrupt calling yield
+        [D] kern/dev/lapic.c:117: [4] Retry to calibrate internal timer of LAPIC.
+        [W] kern/dev/lapic.c:121: Failed to calibrate internal timer of LAPIC.
+        [D] kern/dev/lapic.c:122: Assume LAPIC timer freq = 0.5 GHz.
+        [D] kern/dev/lapic.c:129: Set LAPIC TICR = 7a120.
+
+
+
+
+        ----
+
+
+        # runs 600,000+ iterations
+        [BBUF] thread 1 waiting on item_removed
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852651 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617730 item=1852651 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852654 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617731 item=1852654 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847473 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617732 item=1847473 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847476 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617733 item=1847476 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 11 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847479 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617734 item=1847479 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 10 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847482 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617735 item=1847482 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 11 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847485 (added to bbuf)
+        From cpu 1: [USER] produce i=615829 item=1847488 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 12 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847488 (added to bbuf)
+        From cpu 1: [USER] produce i=615830 item=1847491 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847491 (added to bbuf)
+        From cpu 1: [USER] produce i=615831 item=1847494 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847494 (added to bbuf)
+        From cpu 1: [USER] produce i=615832 item=1847497 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847497 (added to bbuf)
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852657 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615644 item=1852657 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852687 (added to bbuf)
+        From cpu 1: [USER] produce i=617563 item=1852690 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852690 (added to bbuf)
+        From cpu 1: [USER] produce i=617564 item=1852693 
+        [BBUF] thread 1 waiting on item_removed
+        From cpu 1: [USER] produce i=615833 item=1847500 
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852660 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852663 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617736 item=1852663 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852666 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617737 item=1852666 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852693 (added to bbuf)
+        From cpu 1: [USER] produce i=617565 item=1852696 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852669 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852696 (added to bbuf)
+        From cpu 1: [USER] produce i=617566 item=1852699 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852699 (added to bbuf)
+        From cpu 1: [USER] produce i=617567 item=1852702 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852702 (added to bbuf)
+        From cpu 1: [USER] produce i=617568 item=1852705 
+        [BBUF] thread 1 waiting on item_removed
+        [BBUF] thread 2 waiting on item_removed
+        From cpu 2: [USER] consume i=615645 item=1852660 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852672 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615646 item=1852672 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852675 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615647 item=1852675 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        From cpu 2: [USER] consume i=617738 item=1852669 
+        [CONSUME] (CPU 2 Process 4) consumed == 1852678 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615648 item=1852678 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852681 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615649 item=1852681 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 11 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852684 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615650 item=1852684 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 10 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847485 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615651 item=1847485 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 11 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847500 (added to bbuf)
+        From cpu 1: [USER] produce i=615834 item=1847503 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 12 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847503 (added to bbuf)
+        From cpu 1: [USER] produce i=615835 item=1847506 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847506 (added to bbuf)
+        From cpu 1: [USER] produce i=615836 item=1847509 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847509 (added to bbuf)
+        From cpu 1: [USER] produce i=615837 item=1847512 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847512 (added to bbuf)
+        From cpu 1: [USER] produce i=615838 item=1847515 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847488 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617739 item=1847488 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847491 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617740 item=1847491 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852705 (added to bbuf)
+        From cpu 1: [USER] produce i=617569 item=1852708 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852708 (added to bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847515 (added to bbuf)
+        From cpu 1: [USER] produce i=615839 item=1847518 
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847494 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617741 item=1847494 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847497 (pulled from bbuf)
+        From cpu 1: [USER] produce i=617570 item=1852711 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852711 (added to bbuf)
+        From cpu 1: [USER] produce i=617571 item=1852714 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852714 (added to bbuf)
+        From cpu 1: [USER] produce i=617572 item=1852717 
+        [BBUF] thread 1 waiting on item_removed
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852687 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615652 item=1852687 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852717 (added to bbuf)
+        From cpu 1: [USER] produce i=617573 item=1852720 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852690 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615653 item=1852690 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852720 (added to bbuf)
+        From cpu 2: [USER] consume i=617742 item=1847497 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852693 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617743 item=1852693 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852696 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617744 item=1852696 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852699 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617745 item=1852699 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852702 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617746 item=1852702 
+        From cpu 1: [USER] produce i=617574 item=1852723 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852723 (added to bbuf)
+        From cpu 1: [USER] produce i=617575 item=1852726 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852726 (added to bbuf)
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847500 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615654 item=1847500 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847503 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615655 item=1847503 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847518 (added to bbuf)
+        From cpu 1: [USER] produce i=615840 item=1847521 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847506 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847521 (added to bbuf)
+        From cpu 1: [USER] produce i=615841 item=1847524 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847524 (added to bbuf)
+        From cpu 1: [USER] produce i=615842 item=1847527 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847527 (added to bbuf)
+        From cpu 1: [USER] produce i=615843 item=1847530 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847530 (added to bbuf)
+        From cpu 1: [USER] produce i=615844 item=1847533 
+        [BBUF] thread 2 waiting on item_removed
+        From cpu 1: [USER] produce i=617576 item=1852729 
+        [BBUF] thread 1 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847509 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617747 item=1847509 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847533 (added to bbuf)
+        From cpu 1: [USER] produce i=615845 item=1847536 
+        [BBUF] thread 2 waiting on item_removed
+        From cpu 2: [USER] consume i=615656 item=1847506 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847512 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615657 item=1847512 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852705 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852708 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617748 item=1852708 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852729 (added to bbuf)
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847515 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617749 item=1847515 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852711 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617750 item=1852711 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 11 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852714 (pulled from bbuf)
+        From cpu 1: [USER] produce i=617577 item=1852732 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 12 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852732 (added to bbuf)
+        From cpu 1: [USER] produce i=617578 item=1852735 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852735 (added to bbuf)
+        From cpu 1: [USER] produce i=617579 item=1852738 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852738 (added to bbuf)
+        From cpu 1: [USER] produce i=617580 item=1852741 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        From cpu 2: [USER] consume i=615658 item=1852705 
+        From cpu 2: [USER] consume i=617751 item=1852714 
+        [PRODUCE] (CPU 1 Process 1) produced == 1852741 (added to bbuf)
+        From cpu 1: [USER] produce i=617581 item=1852744 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852744 (added to bbuf)
+        From cpu 1: [USER] produce i=617582 item=1852747 
+        [BBUF] thread 1 waiting on item_removed
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852717 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615659 item=1852717 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852720 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615660 item=1852720 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852747 (added to bbuf)
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852723 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617752 item=1852723 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852726 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617753 item=1852726 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        From cpu 1: [USER] produce i=617583 item=1852750 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852750 (added to bbuf)
+        From cpu 1: [USER] produce i=617584 item=1852753 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852753 (added to bbuf)
+        From cpu 1: [USER] produce i=617585 item=1852756 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852756 (added to bbuf)
+        From cpu 1: [USER] produce i=617586 item=1852759 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852759 (added to bbuf)
+        From cpu 1: [USER] produce i=617587 item=1852762 
+        [BBUF] thread 1 waiting on item_removed
+        [BBUF] thread 2 waiting on item_removed
+        [CONSUME] (CPU 2 Process 5) consumed == 1847518 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617754 item=1847518 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847521 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852762 (added to bbuf)
+        From cpu 1: [USER] produce i=617588 item=1852765 
+        [BBUF] thread 1 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847524 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615661 item=1847524 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847527 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615662 item=1847527 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847536 (added to bbuf)
+        From cpu 1: [USER] produce i=615846 item=1847539 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847539 (added to bbuf)
+        From cpu 1: [USER] produce i=615847 item=1847542 
+        [BBUF] thread 2 waiting on item_removed
+        [BBUF] thread 1 waiting on item_removed
+        From cpu 2: [USER] consume i=617755 item=1847521 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847530 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617756 item=1847530 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847533 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847542 (added to bbuf)
+        From cpu 1: [USER] produce i=615848 item=1847545 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847545 (added to bbuf)
+        From cpu 1: [USER] produce i=615849 item=1847548 
+        [BBUF] thread 2 waiting on item_removed
+        [BBUF] thread 1 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852729 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615663 item=1852729 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847548 (added to bbuf)
+        From cpu 1: [USER] produce i=615850 item=1847551 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852732 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615664 item=1852732 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847551 (added to bbuf)
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852735 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617757 item=1847533 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852738 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617758 item=1852738 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852741 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617759 item=1852741 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852744 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617760 item=1852744 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 11 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852747 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617761 item=1852747 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 10 items
+        From cpu 1: [USER] produce i=615851 item=1847554 
+        From cpu 2: [USER] consume i=615665 item=1852735 
+        [CONSUME] (CPU 2 Process 5) consumed == 1852750 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617762 item=1852750 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 11 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852765 (added to bbuf)
+        From cpu 1: [USER] produce i=617589 item=1852768 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 12 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852768 (added to bbuf)
+        From cpu 1: [USER] produce i=617590 item=1852771 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852771 (added to bbuf)
+        From cpu 1: [USER] produce i=617591 item=1852774 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852774 (added to bbuf)
+        From cpu 1: [USER] produce i=617592 item=1852777 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852777 (added to bbuf)
+        From cpu 1: [USER] produce i=617593 item=1852780 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852753 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852780 (added to bbuf)
+        From cpu 1: [USER] produce i=617594 item=1852783 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852783 (added to bbuf)
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852756 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615666 item=1852756 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852759 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615667 item=1852759 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852762 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615668 item=1852762 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 12 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847536 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617763 item=1852753 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 11 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847539 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617764 item=1847539 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 10 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847542 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617765 item=1847542 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 9 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847545 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617766 item=1847545 
+        [D] kern/lib/bbuf.c:67: From cpu 1: [USER] produce i=617595 item=1852786 
+        [BBUF] bbuf_remove: 8 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1847548 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617767 item=1847548 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 9 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852786 (added to bbuf)
+        From cpu 1: [USER] produce i=617596 item=1852789 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 10 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852789 (added to bbuf)
+        From cpu 1: [USER] produce i=617597 item=1852792 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 11 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852792 (added to bbuf)
+        From cpu 1: [USER] produce i=617598 item=1852795 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 12 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852795 (added to bbuf)
+        From cpu 1: [USER] produce i=617599 item=1852798 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 13 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852798 (added to bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847554 (added to bbuf)
+        From cpu 1: [USER] produce i=615852 item=1847557 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847557 (added to bbuf)
+        From cpu 1: [USER] produce i=615853 item=1847560 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847560 (added to bbuf)
+        From cpu 1: [USER] produce i=615854 item=1847563 
+        [BBUF] thread 2 waiting on item_removed
+        From cpu 2: [USER] consume i=615669 item=1847536 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1847551 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615670 item=1847551 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852765 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615671 item=1852765 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        From cpu 1: [USER] produce i=617600 item=1852801 
+        [CONSUME] (CPU 2 Process 4) consumed == 1852768 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615672 item=1852768 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 14 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847563 (added to bbuf)
+        From cpu 1: [USER] produce i=615855 item=1847566 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847566 (added to bbuf)
+        From cpu 1: [USER] produce i=615856 item=1847569 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 2) produced == 1847569 (added to bbuf)
+        From cpu 1: [USER] produce i=615857 item=1847572 
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852771 (pulled from bbuf)
+        From cpu 2: [USER] consume i=615673 item=1852771 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 4) consumed == 1852774 (pulled from bbuf)
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 15 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852801 (added to bbuf)
+        From cpu 1: [USER] produce i=617601 item=1852804 
+        [D] kern/lib/bbuf.c:113: [BBUF] bbuf_insert: 16 items
+        [PRODUCE] (CPU 1 Process 1) produced == 1852804 (added to bbuf)
+        From cpu 1: [USER] produce i=617602 item=1852807 
+        [BBUF] thread 1 waiting on item_removed
+        [BBUF] thread 2 waiting on item_removed
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 15 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852777 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617768 item=1852777 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 14 items
+        [CONSUME] (CPU 2 Process 5) consumed == 1852780 (pulled from bbuf)
+        From cpu 2: [USER] consume i=617769 item=1852780 
+        [D] kern/lib/bbuf.c:67: [BBUF] bbuf_remove: 13 items
+        From cpu 2: [USER] consume i=615674 item=1852774 
