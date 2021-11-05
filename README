@@ -21,11 +21,19 @@ Brief description of what you have implemented:
     identify new errors for exceeding quota, reaching max number of children and having an invalid child
     id in sys_spawn.
 
-    Part 4: Implemented a waiting queue for producers and consumers using cvqueue. The threads on the ready queue
-    are sent into the bounded buffer through produce and consume. If the buffer is full, then the produce thread is 
-    set to sleep on the producer waiting queue until the item_removed cv is true. If the buffer is empty, then the 
-    consumer thread is set to sleep in the consumer waiting queue until the item_added cv is true. Buffer is
-    created by us, relies on the empty and full condition variables.
+    Part 4: Implemented a waiting queue for producers and consumers using cvqueue. The condition variable
+    simply stores a cvqueue_t and updates using enqueue and dequeue functions. condvar_wait disables interrupts,
+    enqueues the pid, suspends the lock, enables interrupts again and then acquires the lock. condvar_signal disables interrupts.
+    dequeues from the waiting cv_queue, acquires the spinlock, sets the dequed thread to ready, re enqueue onto the
+    thread's original cpu queue and releases the lock.
+    
+    For the bounded buffer, the threads on the ready queue are sent into the bounded buffer through produce and consume or the cv_waiting queues
+    if it is full or empty. If the buffer is full, then the produce thread is set to sleep on the producer waiting queue until the item_removed cv is true.
+    If the buffer is empty, then the consumer thread is set to sleep in the consumer waiting queue until the item_added cv is true. Buffer is
+    created by us through a circular array implementation. For the remove and insert methods in bbuf, we surround the KERN_DEBUG messages with interrupt disables then enables 
+    so another output does not overwrite it. Then we acquire the spinlock to complete the remove or insert function. The functions
+    then wait for their respective conditions variables using condvar_wait(). 
+
 
     DEBUG output:
 
