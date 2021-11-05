@@ -28,21 +28,21 @@ void debug_info(const char *fmt, ...)
 
 void debug_normal(const char *file, int line, const char *fmt, ...)
 {
-    debug_lock();
+    output_lock();
     dprintf("[D] %s:%d: ", file, line);
 
     va_list ap;
     va_start(ap, fmt);
     vdprintf(fmt, ap);
     va_end(ap);
-    debug_unlock();
+    output_unlock();
 }
 
 #define DEBUG_TRACEFRAMES 10
 
 static void debug_trace(uintptr_t ebp, uintptr_t *eips)
 {
-    debug_lock();
+    output_lock();
     int i;
     uintptr_t *frame = (uintptr_t *) ebp;
 
@@ -52,7 +52,7 @@ static void debug_trace(uintptr_t ebp, uintptr_t *eips)
     }
     for (; i < DEBUG_TRACEFRAMES; i++)
         eips[i] = 0;
-    debug_unlock();
+    output_unlock();
 }
 
 gcc_noinline void debug_panic(const char *file, int line, const char *fmt, ...)
@@ -60,7 +60,7 @@ gcc_noinline void debug_panic(const char *file, int line, const char *fmt, ...)
     int i;
     uintptr_t eips[DEBUG_TRACEFRAMES];
     
-    debug_lock();
+    output_lock();
 
     va_list ap;
 
@@ -75,20 +75,20 @@ gcc_noinline void debug_panic(const char *file, int line, const char *fmt, ...)
         dprintf("\tfrom 0x%08x\n", eips[i]);
 
     dprintf("Kernel Panic !!!\n");
-    debug_unlock();
+    output_unlock();
     halt();
 }
 
 void debug_warn(const char *file, int line, const char *fmt, ...)
 {
-    debug_lock();
+    output_lock();
     dprintf("[W] %s:%d: ", file, line);
 
     va_list ap;
     va_start(ap, fmt);
     vdprintf(fmt, ap);
     va_end(ap);
-    debug_unlock();
+    output_unlock();
 }
 
 #endif  /* DEBUG_MSG */

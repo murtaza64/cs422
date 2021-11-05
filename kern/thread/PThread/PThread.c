@@ -63,7 +63,7 @@ void thread_yield(void)
 
     spinlock_acquire(&thread_lock);
     #ifdef SHOW_LOCKING
-    dprintf("[SCHED] yield (cpu %d pid %d): acquired thread lock \n", get_pcpu_idx(), get_curid());
+    dprintf("[SCHED] yield (cpu %d pid %d): acquired scheduler lock \n", get_pcpu_idx(), get_curid());
     #endif
 
     tcb_set_state(old_cur_pid, TSTATE_READY);
@@ -72,7 +72,7 @@ void thread_yield(void)
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
 
     #ifdef SHOW_LOCKING
-    dprintf("[SCHED] yield (cpu %d pid %d): yielding to %d \n", get_pcpu_idx(), get_curid(),new_cur_pid);
+    dprintf("[SCHED] yield (cpu %d pid %d): ctx switching to %d \n", get_pcpu_idx(), get_curid(),new_cur_pid);
     #endif
 
     tcb_set_state(new_cur_pid, TSTATE_RUN);
@@ -85,7 +85,7 @@ void thread_yield(void)
     spinlock_release(&thread_lock); //does moving this after the ctx switch kill us?
     //note: i made the necessary changes to pproc
     #ifdef SHOW_LOCKING
-    dprintf("[SCHED] yield (cpu %d pid %d): released sched lock\n", get_pcpu_idx(), get_curid());
+    dprintf("[SCHED] yield (cpu %d pid %d): released scheduler lock\n", get_pcpu_idx(), get_curid());
     #endif
 }
 //yields to another thread WITHOUT euqueueing current thread on ready queue
@@ -96,7 +96,7 @@ void thread_cv_suspend(spinlock_t *lock)
     // intr_local_disable(); //interrupts now disabled in cv wait
     spinlock_acquire(&thread_lock);
     #ifdef SHOW_LOCKING
-    dprintf("[SCHED] suspend (cpu %d pid %d): acquired sched lock\n", get_pcpu_idx(), get_curid());
+    dprintf("[SCHED] suspend (cpu %d pid %d): acquired scheduler lock\n", get_pcpu_idx(), get_curid());
     #endif
     tcb_set_state(old_cur_pid, TSTATE_SLEEP);
 
@@ -106,7 +106,7 @@ void thread_cv_suspend(spinlock_t *lock)
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
     
     #ifdef SHOW_LOCKING
-    dprintf("[SCHED] suspend (cpu %d pid %d): releasing cv lock and yielding to %d \n", get_pcpu_idx(), get_curid(), new_cur_pid);
+    dprintf("[SCHED] suspend (cpu %d pid %d): releasing cv lock and ctx switching to %d \n", get_pcpu_idx(), get_curid(), new_cur_pid);
     #endif
 
     if (new_cur_pid == NUM_IDS) { //TODO what to do here? (no other threads ready)

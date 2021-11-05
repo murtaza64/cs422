@@ -43,13 +43,13 @@ unsigned int bbuf_remove(bbuf_t *bbuf) {
     unsigned int item;
     #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] thread %d acquiring bbuf spinlock... \n", get_curid());
+    dprintf("[BBUF] thread %d acquiring bbuf spinlock... \n", get_curid());
     intr_local_enable();
     #endif
     spinlock_acquire(&(bbuf->lock));
     #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] thread %d acquired bbuf spinlock\n", get_curid());
+    dprintf("[BBUF] thread %d acquired bbuf spinlock\n", get_curid());
     intr_local_enable();
     #endif
     while (bbuf->n_items == 0) {
@@ -64,7 +64,7 @@ unsigned int bbuf_remove(bbuf_t *bbuf) {
     bbuf->n_items--;
     // #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] bbuf_remove: %d items\n", bbuf->n_items);
+    dprintf("[BBUF] bbuf_remove: %d items\n", bbuf->n_items);
     intr_local_enable();
     // #endif
 
@@ -73,7 +73,7 @@ unsigned int bbuf_remove(bbuf_t *bbuf) {
 
     #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] thread %d released bbuf spinlock\n", get_curid());
+    dprintf("[BBUF] thread %d released bbuf spinlock\n", get_curid());
     intr_local_enable();
     #endif
 
@@ -83,7 +83,7 @@ unsigned int bbuf_remove(bbuf_t *bbuf) {
 void bbuf_insert(bbuf_t *bbuf, unsigned int item) {
     #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] thread %d acquiring bbuf spinlock... \n", get_curid());
+    dprintf("[BBUF] thread %d acquiring bbuf spinlock... \n", get_curid());
     intr_local_enable();
     #endif
 
@@ -91,7 +91,7 @@ void bbuf_insert(bbuf_t *bbuf, unsigned int item) {
     
     #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] thread %d acquired bbuf spinlock\n", get_curid());
+    dprintf("[BBUF] thread %d acquired bbuf spinlock\n", get_curid());
     intr_local_enable();
     #endif
 
@@ -110,7 +110,7 @@ void bbuf_insert(bbuf_t *bbuf, unsigned int item) {
     bbuf->n_items++;
     // #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] bbuf_insert: %d items\n", bbuf->n_items);
+    dprintf("[BBUF] bbuf_insert: %d items\n", bbuf->n_items);
     intr_local_enable();
     // #endif
 
@@ -119,7 +119,7 @@ void bbuf_insert(bbuf_t *bbuf, unsigned int item) {
 
     #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] thread %d released bbuf spinlock\n", get_curid());
+    dprintf("[BBUF] thread %d released bbuf spinlock\n", get_curid());
     intr_local_enable();
     #endif
 }

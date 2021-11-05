@@ -10,11 +10,22 @@ Collaborators: Murtaza Javaid, Daniel Li
 Coded this assignment together: Yes
 Brief description of what you have implemented:
     Part 1: Added trap handlers for new trap numbers and inserted appropriate spin locks
-    in serial, console, dprintf and debug. Created a debug, input and output lock for these
-    layers.
+    in serial, console, dprintf and debug. Created an input and output lock for these
+    layers. The output lock is acquired by vdprintf, putchar and various debug functions. since
+    some of these functions may call each other, the output lock is not reacquired if already held by
+    the caller.
+
+    These locks are inited in cons_init and debug_init.
+
+    new files: kern/lib/io_lock.*
 
     Part 2: Implemented a clock timer that stops the current thread and switches to a new thread
-    every SCHED_SLICE ms. Yield to the next thread on the queue and added locks in thread_spawn and thread_yield.
+    every SCHED_SLICE ms. Yield to the next thread on the queue and added a scheduler lock in 
+    thread_spawn and thread_yield (single lock for all cpus for any access to TQueue).
+    This lock is released after the context switch--a modification to proc_start_user is
+    required to make this work (since the first time a thread is run it will be there)
+
+    This lock is inited in thread_init.
 
     Part 3: Added new interrupts enablers and disablers to enable interrupts for
     sys_produce, sys_consume and also when they print using kern debug. Also modified sys_spawn to 
@@ -23,21 +34,49 @@ Brief description of what you have implemented:
 
     Part 4: Implemented a waiting queue for producers and consumers using cvqueue. The condition variable
     simply stores a cvqueue_t and updates using enqueue and dequeue functions. condvar_wait disables interrupts,
-    enqueues the pid, suspends the lock, enables interrupts again and then acquires the lock. condvar_signal disables interrupts.
-    dequeues from the waiting cv_queue, acquires the spinlock, sets the dequed thread to ready, re enqueue onto the
-    thread's original cpu queue and releases the lock.
+    enqueues the thread onto thw cvqueue, suspends the running thread, enables interrupts again and then 
+    acquires the lock for the shared object. condvar_signal disables interrupts, dequeues from the waiting cvqueue, 
+    acquires the scheduler lock, sets the dequed thread to ready, enqueue onto the thread's original cpu 
+    ready queue and releases the scheduler lock.
     
-    For the bounded buffer, the threads on the ready queue are sent into the bounded buffer through produce and consume or the cv_waiting queues
-    if it is full or empty. If the buffer is full, then the produce thread is set to sleep on the producer waiting queue until the item_removed cv is true.
-    If the buffer is empty, then the consumer thread is set to sleep in the consumer waiting queue until the item_added cv is true. Buffer is
-    created by us through a circular array implementation. For the remove and insert methods in bbuf, we surround the KERN_DEBUG messages with interrupt disables then enables 
-    so another output does not overwrite it. Then we acquire the spinlock to complete the remove or insert function. The functions
+    For the bounded buffer, we have a circular array based queue with two condition variables
+    and a spinlock for access to the shared data structure. 
+    If the buffer is full, then a producer thread calling insert  
+    is set to sleep on the item_remove waiting queue until the item_removed cv is signaled.
+    If the buffer is empty, then a consumer thread is set to sleep in the 
+    item_added waiting queue until the item_added cv is signaled. For the remove and 
+    insert methods in bbuf, we surround the KERN_DEBUG messages with interrupt disables then enables 
+    so another output does not overwrite it. Then we acquire the spinlock to 
+    complete the remove or insert function. The functions
     then wait for their respective conditions variables using condvar_wait(). 
+    When waiting on a condition variable, the lock for the bbuf is passed to condvar_wait 
+    which releases it when putting the thread to sleep and reacquires it on wakeup.
+
+    Our buffer is configured to store unsigned int, but could easily store any data type.
+    We also changed the signatures of the produce and consume syscalls in userspace to take and return
+    an unsigned int value respectively. This allows the bbuf to actually store some values that were produced.
+    In this demonstration, we initialize one bbuf in devinit and use it for the produce and consume
+    syscalls.
+    
+    new files: kern/lib/bbuf.*, kern/lib/condvar.*
 
 
-    DEBUG output:
 
-        # 3 types of locks: debug, output, input
+    For the debug output, we added two flags that can be sent to make, SHOW_LOCKING and SHOW_TIMER.
+    The following is the result of the most verbose output, which can be included by compiling using 
+
+        make SHOW_LOCKING=1 SHOW_TIMER=1 && make qemu-nox
+
+    (we used dprintf for the debug statements to make the output easier to read. The output below
+    may differ slightly from the output in the final version as we hadn't finished replacing all
+    KERN_DEBUGs with dprintfs.)
+
+    The program runs for 600 000+ iterations of produce and consume (on each user 
+    thread, so 1.2M produce-consume pairs total) without stopping. We didn't let it run for longer than this.
+    At iteration i, the producer produces 3*i+1 (an arbitrary function that just makes the distinction between
+    the iteration and the item produced clear)
+
+    DEBUG output, with added comments prefixed with #:
 
         # Process 1 producing and adding to the bbuf
         [D] kern/proc/PProc/PProc.c:27: proc_start: released thread lock cpu 1 pid 1

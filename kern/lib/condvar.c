@@ -40,7 +40,7 @@ void condvar_wait(condvar_t *cv, spinlock_t *lock) {
 
     #ifdef SHOW_LOCKING
     intr_local_disable();
-    KERN_DEBUG("[BBUF] wait (cpu %d pid %d): reaquired bbuf lock\n", get_pcpu_idx(), get_curid());
+    dprintf("[CONDVAR] wait (cpu %d pid %d): reaquired bbuf lock\n", get_pcpu_idx(), get_curid());
     intr_local_enable();
     #endif
 }
@@ -52,7 +52,7 @@ void condvar_signal(condvar_t *cv) {
 
         spinlock_acquire(&thread_lock);
         #ifdef SHOW_LOCKING
-        KERN_DEBUG("condvar_signal: found waiting thread %d (was on cpu %d)\n", t.pid, t.cpu_idx);
+        dprintf("[CONDVAR] condvar_signal: found waiting thread %d (was on cpu %d)\n", t.pid, t.cpu_idx);
         #endif
         //TODO: add error state for empty dequeue?
         tcb_set_state(t.pid, TSTATE_READY);
@@ -61,7 +61,7 @@ void condvar_signal(condvar_t *cv) {
         spinlock_release(&thread_lock);
 
         #ifdef SHOW_LOCKING
-        KERN_DEBUG("condvar_signal: complete (pid %d)\n", get_curid());
+        dprintf("[CONDVAR] condvar_signal: complete (pid %d)\n", get_curid());
         #endif
         
         intr_local_enable();
