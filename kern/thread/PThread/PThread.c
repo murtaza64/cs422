@@ -101,6 +101,8 @@ void sched_update(void)
 void thread_sleep(void *chan, spinlock_t *lk)
 {
     // TODO: your local variables here.
+    unsigned int old_cur_pid;
+    unsigned int new_cur_pid;
 
     if (lk == 0)
         KERN_PANIC("sleep without lock");
@@ -110,14 +112,33 @@ void thread_sleep(void *chan, spinlock_t *lk)
     // then switch. Once we hold sched_lk, we can be guaranteed that we won't
     // miss any wakeup (wakeup runs with sched_lk locked), so it's okay to
     // release lock.
+    spinlock_acquire(&sched_lk);
+    spinlock_release(lk);
+
+    old_cur_pid = get_curid();
+    tcb_set_chan(old_cur_pid, chan);
 
     // TODO: Go to sleep.
+    tcb_set_state(old_cur_pid, TSTATE_SLEEP);
+    tcb_set_chan(old_cur_pid, chan);
 
     // TODO: Context switch.
+    new_cur_pid = tqueue_dequeue(NUM_IDS);
+    tcb_set_state(new_cur_pid, TSTATE_RUN);
+    set_curid(new_cur_pid);
+    if (old_cur_pid != new_cur_pid) {
+        spinlock_release(&sched_lk);
+        kctx_switch(old_cur_pid, new_cur_pid);
+    } else {
+        spinlock_release(&sched_lk);
+    }
 
     // TODO: Tidy up.
+    spinlock_acquire(&sched_lk);
 
     // TODO: Reacquire original lock.
+    spinlock_acquire(lk);
+    spinlock_release(&sched_lk);
 }
 
 /**
@@ -125,5 +146,15 @@ void thread_sleep(void *chan, spinlock_t *lk)
  */
 void thread_wakeup(void *chan)
 {
+    unsigned int pid;
     // TODO
+    spinlock_acquire(&sched_lk);
+    for (pid = 0; pid < NUM_IDS; pid++) {
+        if (tcb_get_chan(pid) == chan) {
+            tcb_set_chan(pid, 0);
+            tcb_set_state(pid, TSTATE_READY);
+            tqueue_enqueue(NUM_IDS, pid);
+        }
+    }
+    spinlock_release(&sched_lk);
 }
