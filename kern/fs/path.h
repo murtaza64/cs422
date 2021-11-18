@@ -3,6 +3,8 @@
 
 #ifdef _KERN_
 
+#define DIRSIZ 14
+
 struct inode *namei(char *path);
 struct inode *nameiparent(char *path, char *name);
 

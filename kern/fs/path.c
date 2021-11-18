@@ -18,6 +18,8 @@
 #include "dir.h"
 #include "log.h"
 
+#include <kern/lib/string.h>
+
 // Paths
 
 /**
@@ -37,10 +39,54 @@
  *   skipelem("a", name) = "", setting name = "a"
  *   skipelem("", name) = skipelem("////", name) = 0
  */
+
+unsigned int strlen(const char* s) {
+    int i;
+    for (i = 0; s[i] != '\0'; i++);
+    return i;
+}
+
 static char *skipelem(char *path, char *name)
 {
     // TODO
-    return 0;
+    int i, k;
+    i = 0;
+    //remove leading slashes
+    for (; path[i] == '/'; i++);
+    
+    // Save name after first set of slashes
+    k = 0;
+    while (path[i] != '/' && path[i] != '\0') {
+        //only copy the first DIRSIZ - 1, but keep consuming till a / or \0
+        if (k < DIRSIZ - 1) {
+            name[k] = path[i];
+            k++;
+        }
+        i++;
+    }
+    // Add null terminator to end of name
+    name[k] = '\0';
+
+    // No non-slash characters
+    if (k == 0) {
+        return 0;
+    }
+    
+    
+    //remove next set of leading slashes
+    for (; path[i] == '/'; i++);
+
+    // Copy over remaining path after second set of slashes
+    // char retpath[strlen(path) + 1]; // [strlen(path) - i + 1]
+    // j = 0;
+    // while (i <= strlen(path)) {
+    //     retpath[j] = path[i];
+    //     i++;
+    //     j++;
+    // }
+
+    //lol just do pointer arithmetic
+    return path + i;
 }
 
 /**
@@ -52,9 +98,12 @@ static char *skipelem(char *path, char *name)
 static struct inode *namex(char *path, bool nameiparent, char *name)
 {
     struct inode *ip;
+    struct inode *next;
+    // struct inode *parent_ip;
 
     // If path is a full path, get the pointer to the root inode. Otherwise get
     // the inode corresponding to the current working directory.
+    parent_ip = 0;
     if (*path == '/') {
         ip = inode_get(ROOTDEV, ROOTINO);
     } else {
@@ -63,11 +112,24 @@ static struct inode *namex(char *path, bool nameiparent, char *name)
 
     while ((path = skipelem(path, name)) != 0) {
         // TODO
+        inode_lock(ip);
+        if (ip->type != T_DIR) {
+            return 0;
+        }
+        // inode_unlock(ip);
+        if (nameiparent && path[0] == '\0') {
+            inode_unlock(ip);
+            break;
+        }
+        next = dir_lookup(ip, name, 0);
+        inode_unlockput(ip);
+        ip = next;
     }
-    if (nameiparent) {
-        inode_put(ip);
-        return 0;
-    }
+    // if (nameiparent) {
+    //     inode_put(ip);
+    //     return ip;
+    // }
+    // inode_put(ip);
     return ip;
 }
 
