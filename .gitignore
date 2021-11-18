@@ -21,3 +21,6 @@ Icon*
 eject.sh
 *.cerr
 .gdbinit
+*.json
+/*.txt
+make.sh

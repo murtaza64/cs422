@@ -30,7 +30,9 @@ struct inode *dir_lookup(struct inode *dp, char *name, uint32_t * poff)
     for (off = 0; off < dp->size; off += DIRENT_SIZE) {
         inode_read(dp, (char *) &de, off, DIRENT_SIZE);
         if (de.inum != 0 && dir_namecmp(de.name, name) == 0) {
-            *poff = off;
+            if (poff != 0) {
+                *poff = off;
+            }
             // inode_unlock(dp);
             return inode_get(dp->dev, de.inum);
         }
