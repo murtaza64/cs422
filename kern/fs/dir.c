@@ -77,4 +77,5 @@ int dir_link(struct inode *dp, char *name, uint32_t inum)
     }
 
     KERN_PANIC("No unallocated subdirectory entry\n");
+    return -1;
 }
