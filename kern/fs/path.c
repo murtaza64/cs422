@@ -109,9 +109,11 @@ static struct inode *namex(char *path, bool nameiparent, char *name)
     } else {
         ip = inode_dup((struct inode *) tcb_get_cwd(get_curid()));
     }
+    //TODO: if path is empty, what should nameiparent do?
+    //currently just returns current dir
 
     while ((path = skipelem(path, name)) != 0) {
-        // TODO
+        
         inode_lock(ip);
         if (ip->type != T_DIR) {
             return 0;
