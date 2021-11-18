@@ -103,7 +103,7 @@ static struct inode *namex(char *path, bool nameiparent, char *name)
 
     // If path is a full path, get the pointer to the root inode. Otherwise get
     // the inode corresponding to the current working directory.
-    parent_ip = 0;
+    // parent_ip = 0;
     if (*path == '/') {
         ip = inode_get(ROOTDEV, ROOTINO);
     } else {

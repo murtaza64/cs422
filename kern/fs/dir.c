@@ -40,8 +40,10 @@ struct inode *dir_lookup(struct inode *dp, char *name, uint32_t * poff)
     return 0;
 }
 
-// Write a new directory entry (name, inum) into the directory dp.
-// Caller must acquire lock
+/**
+ * Write a new directory entry (name, inum) into the directory dp.
+ * Caller must acquire lock
+ */
 int dir_link(struct inode *dp, char *name, uint32_t inum)
 {
     // TODO: Check that name is not present.
