@@ -9,6 +9,7 @@
 #include <types.h>
 #include <x86.h>
 #include <file.h>
+#include <string.h>
 
 static gcc_inline void sys_puts(const char *s, size_t len)
 {
@@ -118,7 +119,9 @@ static gcc_inline int sys_link(char *old, char *new)
                    : "i" (T_SYSCALL),
                      "a" (SYS_link),
                      "b" (old),
-                     "c" (new)
+                     "c" (new),
+                     "d" (strlen(old)),
+                     "S" (strlen(new))
                    : "cc", "memory");
 
     return errno ? -1 : 0;
@@ -132,7 +135,8 @@ static gcc_inline int sys_unlink(char *path)
                   : "=a" (errno), "=b" (ret)
                   : "i" (T_SYSCALL),
                     "a" (SYS_unlink),
-                    "b" (path)
+                    "b" (path),
+                    "c" (strlen(path))
                   : "cc", "memory");
 
     return errno ? -1 : 0;
@@ -148,7 +152,8 @@ static gcc_inline int sys_open(char *path, int omode)
                   : "i" (T_SYSCALL),
                     "a" (SYS_open),
                     "b" (path),
-                    "c" (omode)
+                    "c" (omode),
+                    "d" (strlen(path))
                   : "cc", "memory");
 
     return errno ? -1 : fd;
@@ -162,7 +167,8 @@ static gcc_inline int sys_mkdir(char *path)
                   : "=a" (errno), "=b" (ret)
                   : "i" (T_SYSCALL),
                     "a" (SYS_mkdir),
-                    "b" (path)
+                    "b" (path),
+                    "c" (strlen(path))
                   : "cc", "memory");
 
     return errno ? -1 : 0;
@@ -176,7 +182,8 @@ static gcc_inline int sys_chdir(char *path)
                   : "=a" (errno), "=b" (ret)
                   : "i" (T_SYSCALL),
                     "a" (SYS_chdir),
-                    "b" (path)
+                    "b" (path),
+                    "c" (strlen(path))
                   : "cc", "memory");
 
     return errno ? -1 : 0;

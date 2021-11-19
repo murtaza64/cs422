@@ -75,7 +75,15 @@ int dir_link(struct inode *dp, char *name, uint32_t inum)
             return 0;
         }
     }
-
+    de.inum = inum;
+    strncpy(de.name, name, DIRSIZ);
+    if (inode_write(dp, (char *) &de, off, DIRENT_SIZE) < 0) {
+        KERN_PANIC("write failed\n");
+        return -1;
+    } //TODO does this work?
+    else {
+        return 0;
+    }
     KERN_PANIC("No unallocated subdirectory entry\n");
     return -1;
 }

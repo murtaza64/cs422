@@ -6,6 +6,8 @@
 #include <kern/lib/string.h>
 #include <kern/lib/trap.h>
 #include <kern/lib/syscall.h>
+#include <kern/fs/params.h>
+#include <kern/lib/spinlock.h>
 #include <kern/thread/PTCBIntro/export.h>
 #include <kern/thread/PCurID/export.h>
 #include <kern/trap/TSyscallArg/export.h>
@@ -15,6 +17,15 @@
 #include "file.h"
 #include "fcntl.h"
 #include "log.h"
+
+#define FILEBUF_SIZE 10000
+
+char file_buf[FILEBUF_SIZE];
+spinlock_t file_buf_lock;
+
+void sysfile_init() {
+    spinlock_init(&file_buf_lock);
+}
 
 /**
  * This function is not a system call handler, but an auxiliary function
@@ -27,6 +38,13 @@
 static int fdalloc(struct file *f)
 {
     // TODO
+    struct file** openfiles = tcb_get_openfiles(get_curid());
+    for (int fd = 0; fd < NOFILE; fd++) {
+        if (openfiles[fd] == 0) {
+            tcb_set_openfiles(get_curid(), fd, f);
+            return fd;
+        }
+    }
     return -1;
 }
 
@@ -42,6 +60,42 @@ static int fdalloc(struct file *f)
 void sys_read(tf_t *tf)
 {
     // TODO
+    int fd = syscall_get_arg2(tf);
+    uintptr_t dest = syscall_get_arg3(tf);
+    uint32_t n = syscall_get_arg4(tf);
+    if (fd > NOFILE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+    struct file* f = tcb_get_openfiles(get_curid())[fd];
+    if (f->type != FD_INODE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+    if (n > FILEBUF_SIZE) {
+        syscall_set_errno(tf, E_MEM);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+
+    spinlock_acquire(&file_buf_lock);
+    uint32_t r = file_read(f, (char *) &file_buf, n);
+    if (r < 0) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        spinlock_release(&file_buf_lock);
+        return;
+    }
+    int copied = pt_copyout((void *) &file_buf, get_curid(), dest, r);
+    if (copied != r || r != n) {
+        KERN_WARN("READ: copied out %d bytes, read %d when %d were requested\n", copied, r, n);
+    }
+    spinlock_release(&file_buf_lock);
+
+    syscall_set_errno(tf, E_SUCC);
+    syscall_set_retval1(tf, r);
 }
 
 /**
@@ -56,6 +110,41 @@ void sys_read(tf_t *tf)
 void sys_write(tf_t *tf)
 {
     // TODO
+    int fd = syscall_get_arg2(tf);
+    uintptr_t src = syscall_get_arg3(tf);
+    uint32_t n = syscall_get_arg4(tf);
+    if (fd > NOFILE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+    struct file* f = tcb_get_openfiles(get_curid())[fd];
+    if (f->type != FD_INODE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+    if (n > FILEBUF_SIZE) {
+        syscall_set_errno(tf, E_MEM);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+
+    spinlock_acquire(&file_buf_lock);
+    int copied = pt_copyin(get_curid(), src, (void *) &file_buf, n);
+    uint32_t w = file_write(f, (char *) &file_buf, copied);
+    if (w < 0) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        spinlock_release(&file_buf_lock);
+        return;
+    }
+    if (w != copied || copied != n) {
+        KERN_WARN("WRITE: write %d bytes, copied in %d when %d were requested\n", w, copied, n);
+    }
+    spinlock_release(&file_buf_lock);
+    syscall_set_errno(tf, E_SUCC);
+    syscall_set_retval1(tf, w);
 }
 
 /**
@@ -64,7 +153,26 @@ void sys_write(tf_t *tf)
  */
 void sys_close(tf_t *tf)
 {
-    // TODO
+    //TODO
+    int fd = syscall_get_arg2(tf);
+    if (fd > NOFILE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+    KERN_INFO("CLOSE %d\n", fd);
+    struct file* f = tcb_get_openfiles(get_curid())[fd];
+    if (f->type != FD_INODE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+
+    file_close(f);
+    tcb_set_openfiles(get_curid(), fd, 0);
+    KERN_INFO("CLOSE successful\n");
+    syscall_set_errno(tf, E_SUCC);
+    syscall_set_retval1(tf, 0);
 }
 
 /**
@@ -74,6 +182,35 @@ void sys_close(tf_t *tf)
 void sys_fstat(tf_t *tf)
 {
     // TODO
+    int fd = syscall_get_arg2(tf);
+    if (fd > NOFILE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+    struct file* f = tcb_get_openfiles(get_curid())[fd];
+    if (f->type != FD_INODE) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+    struct file_stat st;
+    
+    if (file_stat(f, &st) != 0) {
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+
+    int copied = pt_copyout((void *) &st, get_curid(), syscall_get_arg3(tf), sizeof(struct file_stat));
+    if (copied != sizeof(struct file_stat)) {
+        syscall_set_errno(tf, E_MEM);
+        syscall_set_retval1(tf, -1);
+        return;
+    }
+
+    syscall_set_errno(tf, E_SUCC);
+    syscall_set_retval1(tf, 0);
 }
 
 /**
@@ -81,16 +218,24 @@ void sys_fstat(tf_t *tf)
  */
 void sys_link(tf_t * tf)
 {
-    char name[DIRSIZ], new[128], old[128];
+    char name[DIRSIZ], old[128], new[128];
     struct inode *dp, *ip;
+    int old_len, new_len;
 
-    pt_copyin(get_curid(), syscall_get_arg2(tf), old, 128);
-    pt_copyin(get_curid(), syscall_get_arg3(tf), new, 128);
+    old_len = syscall_get_arg4(tf);
+    new_len = syscall_get_arg5(tf);
+    pt_copyin(get_curid(), syscall_get_arg2(tf), old, old_len);
+    old[old_len] = '\0';
+    pt_copyin(get_curid(), syscall_get_arg3(tf), new, new_len);
+    new[new_len] = '\0';
+
+    KERN_INFO("LINK %s -> %s\n", new, old);
 
     if ((ip = namei(old)) == 0) {
         syscall_set_errno(tf, E_NEXIST);
         return;
     }
+    // KERN_INFO("LINK: got ip from %s,\n");
 
     begin_trans();
 
@@ -119,6 +264,7 @@ void sys_link(tf_t * tf)
     commit_trans();
 
     syscall_set_errno(tf, E_SUCC);
+    KERN_INFO("LINK successful\n");
     return;
 
 bad:
@@ -154,8 +300,13 @@ void sys_unlink(tf_t *tf)
     struct dirent de;
     char name[DIRSIZ], path[128];
     uint32_t off;
+    int path_len;
+    
+    path_len = syscall_get_arg3(tf);
+    pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);
+    path[path_len] = '\0';
 
-    pt_copyin(get_curid(), syscall_get_arg2(tf), path, 128);
+    KERN_INFO("UNLINK %s\n", path);
 
     if ((dp = nameiparent(path, name)) == 0) {
         syscall_set_errno(tf, E_DISK_OP);
@@ -197,6 +348,7 @@ void sys_unlink(tf_t *tf)
     commit_trans();
 
     syscall_set_errno(tf, E_SUCC);
+    KERN_INFO("LINK successful\n");
     return;
 
 bad:
@@ -211,7 +363,7 @@ static struct inode *create(char *path, short type, short major, short minor)
     uint32_t off;
     struct inode *ip, *dp;
     char name[DIRSIZ];
-
+    KERN_INFO("OPEN->CREATE\n");
     if ((dp = nameiparent(path, name)) == 0)
         return 0;
     inode_lock(dp);
@@ -247,6 +399,7 @@ static struct inode *create(char *path, short type, short major, short minor)
         KERN_PANIC("create: dir_link");
 
     inode_unlockput(dp);
+    KERN_INFO("OPEN->CREATE successful\n");
     return ip;
 }
 
@@ -256,10 +409,14 @@ void sys_open(tf_t *tf)
     int fd, omode;
     struct file *f;
     struct inode *ip;
+    int path_len;
 
-    pt_copyin(get_curid(), syscall_get_arg2(tf), path, 128);
+    path_len = syscall_get_arg4(tf);
+    pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);
     omode = syscall_get_arg3(tf);
+    path[path_len] = '\0';
 
+    KERN_INFO("OPEN %s\n", path);
     if (omode & O_CREATE) {
         begin_trans();
         ip = create(path, T_FILE, 0, 0);
@@ -301,14 +458,20 @@ void sys_open(tf_t *tf)
     f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
     syscall_set_retval1(tf, fd);
     syscall_set_errno(tf, E_SUCC);
+    KERN_INFO("OPEN successful %s %d\n", path, fd);
 }
 
 void sys_mkdir(tf_t *tf)
 {
     char path[128];
     struct inode *ip;
+    int path_len;
+    
 
-    pt_copyin(get_curid(), syscall_get_arg2(tf), path, 128);
+    path_len = syscall_get_arg3(tf);
+    pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);
+    path[path_len] = '\0';
+    KERN_INFO("MKDIR %s\n", path);
 
     begin_trans();
     if ((ip = (struct inode *) create(path, T_DIR, 0, 0)) == 0) {
@@ -319,6 +482,7 @@ void sys_mkdir(tf_t *tf)
     inode_unlockput(ip);
     commit_trans();
     syscall_set_errno(tf, E_SUCC);
+    KERN_INFO("MKDIR successful %s\n", path);
 }
 
 void sys_chdir(tf_t *tf)
@@ -326,8 +490,12 @@ void sys_chdir(tf_t *tf)
     char path[128];
     struct inode *ip;
     int pid = get_curid();
+    int path_len;
 
-    pt_copyin(get_curid(), syscall_get_arg2(tf), path, 128);
+    path_len = syscall_get_arg3(tf);
+    pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);
+    path[path_len] = '\0';
+    KERN_INFO("CHDIR %s\n", path);
 
     if ((ip = namei(path)) == 0) {
         syscall_set_errno(tf, E_DISK_OP);
@@ -343,4 +511,5 @@ void sys_chdir(tf_t *tf)
     inode_put(tcb_get_cwd(pid));
     tcb_set_cwd(pid, ip);
     syscall_set_errno(tf, E_SUCC);
+    KERN_INFO("CHDIR successful %s\n", path);
 }

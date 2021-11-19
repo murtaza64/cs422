@@ -116,6 +116,7 @@ static struct inode *namex(char *path, bool nameiparent, char *name)
         
         inode_lock(ip);
         if (ip->type != T_DIR) {
+            inode_unlockput(ip);
             return 0;
         }
         // inode_unlock(ip);
@@ -125,6 +126,9 @@ static struct inode *namex(char *path, bool nameiparent, char *name)
         }
         next = dir_lookup(ip, name, 0);
         inode_unlockput(ip);
+        if (next == 0) {
+            return 0;
+        }
         ip = next;
     }
     // if (nameiparent) {
