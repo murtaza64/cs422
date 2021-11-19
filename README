@@ -1,14 +1,20 @@
-Compile: make / make all
-Run tests: make clean && make TEST=1
-Run in qemu: make qemu / make qemu-nox
-Debug with gdb: make qemu-gdb / make qemu-nox-gdb
-                (in another terminal) gdb
+1. Murtaza Javaid and Daniel Li
+2. Coded together
+3. 
+    Part 1: Created thread sleep and wake up functions to allow threads to wait on resources using the lk.
+    Thread sleep acquires the required locks, sets the old pid's state to sleeping and waits until the 
+    resource is available, switches context with the next thread and marks it as running, then releases the required locks.
+    Thread yield manually puts the old thread back onto the ready queue and sets the next thread from the ready queue
+    as running. We also used the scheduler lock in this code for concurrency. 
 
-To use your solutions from lab 1: git merge lab1
-To use sample lab 1 solutions: copy files in samples/ to appropriate directories
+    Part 2: N/A
 
-List here the following info:
-1. who you have worked with
-2. whether you coded this assignment together, and if not, who worked on which part
-3. brief description of what you have implemented
-4. and anything else you would like us to know
+    Part 3:
+        - Directory Layer: Implemented dir_lookup to find a subdirectory inode in a given directory, also implemented dir_link, which links a new inode to the existing current directory inode.
+        - Path Layer: Implemented a skipelem function to copy the name of the first directory to "name" and returns the new path without the first directory. Also implemented namex
+        which looks up and return the inode for a path name, or 0 if it fails.
+        - Syscall Layer: Modified the syscall functions to pass in strlen through inline assembly arguments. Implemented the fdalloc, sys_read, sys_write, sys_close and sys_fstat functions while adding error checking.
+
+    Part 4: Implemented a shell lol
+
+4. N/A

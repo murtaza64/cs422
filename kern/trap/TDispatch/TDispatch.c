@@ -106,6 +106,9 @@ void syscall_dispatch(tf_t *tf)
     case SYS_isdir:
         sys_isdir(tf);
         break;
+    case SYS_cp_recursive:
+        sys_cp_recursive(tf);
+        break;
     default:
         syscall_set_errno(tf, E_INVAL_CALLNR);
     }

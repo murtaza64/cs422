@@ -143,6 +143,23 @@ static gcc_inline int sys_link(char *old, char *new)
     return errno ? -1 : 0;
 }
 
+static gcc_inline int sys_cp_recursive(char *old, char *new)
+{
+    int errno, ret;
+
+    asm volatile ("int %2"
+                   : "=a" (errno), "=b" (ret)
+                   : "i" (T_SYSCALL),
+                     "a" (SYS_cp_recursive),
+                     "b" (old),
+                     "c" (new),
+                     "d" (strlen(old)),
+                     "S" (strlen(new))
+                   : "cc", "memory");
+
+    return errno ? -1 : 0;
+}
+
 static gcc_inline int sys_unlink(char *path)
 {
     int errno, ret;
