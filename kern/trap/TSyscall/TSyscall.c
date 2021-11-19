@@ -4,12 +4,63 @@
 #include <lib/x86.h>
 #include <lib/trap.h>
 #include <lib/syscall.h>
+#include <lib/spinlock.h>
+
 #include <dev/intr.h>
 #include <pcpu/PCPUIntro/export.h>
 
 #include "import.h"
+#include <kern/dev/console.h>
+#define LINEBUF_SIZE 1024 //from console.c
 
 static char sys_buf[NUM_IDS][PAGESIZE];
+
+spinlock_t getline_lock;
+
+
+void syscall_init(void) {
+    spinlock_init(&getline_lock);
+}
+
+void sys_getline(tf_t *tf) {
+    unsigned int cur_pid;
+    unsigned int buf_uva, buf_len;
+    unsigned int line_size;
+
+    cur_pid = get_curid();
+    buf_uva = syscall_get_arg2(tf);
+    buf_len = syscall_get_arg3(tf);
+
+    spinlock_acquire(&getline_lock);
+    char* line = readline(0);
+
+    // KERN_INFO("kern: line=%s\n", line);
+    // for (int c = 0; c < 20; c++) {
+    //     KERN_INFO("%d ", line[c]);
+    // }
+    // KERN_INFO("\n");
+    
+    if (line == 0) {
+        syscall_set_errno(tf, E_INVAL_EVENT);
+        syscall_set_retval1(tf, 0);
+        spinlock_release(&getline_lock);
+        return;
+    }
+    //strlen
+    int len;
+    for (len = 0; line[len] != '\0'; len++);
+    //add one for '\0'
+    len++;
+    //clamp to buf_len
+    if (buf_len < len) {
+        line[buf_len - 1] = '\0';
+        len = buf_len;
+    }
+    int copied = pt_copyout(line, cur_pid, buf_uva, len);
+    spinlock_release(&getline_lock);
+    syscall_set_errno(tf, E_SUCC);
+    syscall_set_retval1(tf, copied);
+}
 
 /**
  * Copies a string from user into buffer and prints it to the screen.
@@ -58,6 +109,7 @@ extern uint8_t _binary___obj_user_pingpong_ping_start[];
 extern uint8_t _binary___obj_user_pingpong_pong_start[];
 extern uint8_t _binary___obj_user_pingpong_ding_start[];
 extern uint8_t _binary___obj_user_fstest_fstest_start[];
+extern uint8_t _binary___obj_user_shell_shell_start[];
 
 /**
  * Spawns a new child process.
@@ -115,6 +167,9 @@ void sys_spawn(tf_t *tf)
         break;
     case 4:
         elf_addr = _binary___obj_user_fstest_fstest_start;
+        break;
+    case 5:
+        elf_addr = _binary___obj_user_shell_shell_start;
         break;
     default:
         syscall_set_errno(tf, E_INVAL_PID);

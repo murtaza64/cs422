@@ -59,7 +59,7 @@ static int fdalloc(struct file *f)
  */
 void sys_read(tf_t *tf)
 {
-    // TODO
+    // TODO make sure not dir?
     int fd = syscall_get_arg2(tf);
     uintptr_t dest = syscall_get_arg3(tf);
     uint32_t n = syscall_get_arg4(tf);
@@ -466,7 +466,6 @@ void sys_mkdir(tf_t *tf)
     char path[128];
     struct inode *ip;
     int path_len;
-    
 
     path_len = syscall_get_arg3(tf);
     pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);

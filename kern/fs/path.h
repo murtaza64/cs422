@@ -7,6 +7,7 @@
 
 struct inode *namei(char *path);
 struct inode *nameiparent(char *path, char *name);
+unsigned int strlen(const char* s);
 
 #endif  /* _KERN_ */
 

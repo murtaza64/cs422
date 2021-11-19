@@ -62,6 +62,22 @@ static gcc_inline int sys_read(int fd, char *buf, size_t n)
     return errno ? -1 : ret;
 }
 
+static gcc_inline int sys_getline(char *buf, size_t n)
+{
+    int errno;
+    size_t ret;
+
+    asm volatile ("int %2"
+                  : "=a" (errno), "=b" (ret)
+                  : "i" (T_SYSCALL),
+                    "a" (SYS_getline),
+                    "b" (buf),
+                    "c" (n)
+                  : "cc", "memory");
+
+    return errno ? -1 : ret;
+}
+
 static gcc_inline int sys_write(int fd, char *p, int n)
 {
     int errno;
@@ -184,6 +200,49 @@ static gcc_inline int sys_chdir(char *path)
                     "a" (SYS_chdir),
                     "b" (path),
                     "c" (strlen(path))
+                  : "cc", "memory");
+
+    return errno ? -1 : 0;
+}
+
+static gcc_inline int sys_ls(char *path)
+{
+    int errno, ret;
+
+    asm volatile ("int %2"
+                  : "=a" (errno), "=b" (ret)
+                  : "i" (T_SYSCALL),
+                    "a" (SYS_ls),
+                    "b" (path),
+                    "c" (strlen(path))
+                  : "cc", "memory");
+
+    return errno ? -1 : 0;
+}
+
+static gcc_inline int sys_isdir(char *path)
+{
+    int errno, ret;
+
+    asm volatile ("int %2"
+                  : "=a" (errno), "=b" (ret)
+                  : "i" (T_SYSCALL),
+                    "a" (SYS_isdir),
+                    "b" (path),
+                    "c" (strlen(path))
+                  : "cc", "memory");
+
+    return errno ? 0 : ret;
+}
+
+static gcc_inline int sys_pwd()
+{
+    int errno, ret;
+
+    asm volatile ("int %2"
+                  : "=a" (errno), "=b" (ret)
+                  : "i" (T_SYSCALL),
+                    "a" (SYS_pwd)
                   : "cc", "memory");
 
     return errno ? -1 : 0;

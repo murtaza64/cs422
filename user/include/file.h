@@ -55,4 +55,7 @@ struct file {
 #define mkdir(path)       sys_mkdir((path))
 #define chdir(path)       sys_chdir((path))
 
+//new syscalls for shell
+#define getline(buf, len) sys_getline((buf), (len))     
+
 #endif  /* !_USER_FILE_H_ */

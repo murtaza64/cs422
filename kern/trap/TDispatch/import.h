@@ -9,6 +9,8 @@ void sys_puts(tf_t *tf);
 void sys_spawn(tf_t *tf);
 void sys_yield(tf_t *tf);
 
+void sys_getline(tf_t *tf);
+
 #endif  /* _KERN_ */
 
 #endif  /* !_KERN_TRAP_TDISPATCH_H_ */

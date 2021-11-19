@@ -43,7 +43,13 @@ enum __syscall_nr {
     SYS_link,
     SYS_unlink,
     SYS_stat,
-
+    
+    //new syscalls for shell:
+    SYS_getline,
+    SYS_ls,
+    SYS_pwd,
+    SYS_isdir,
+    
     MAX_SYSCALL_NR  /* XXX: always put it at the end of __syscall_nr */
 };
 

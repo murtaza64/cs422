@@ -7,6 +7,7 @@
 
 #include "import.h"
 #include <kern/fs/sysfile.h>
+#include <kern/fs/sysshell.h>
 
 void syscall_dispatch(tf_t *tf)
 {
@@ -90,6 +91,20 @@ void syscall_dispatch(tf_t *tf)
         break;
     case SYS_stat:
         sys_fstat(tf);
+        break;
+
+    //new syscalls for shell
+    case SYS_getline:
+        sys_getline(tf);
+        break;
+    case SYS_ls:
+        sys_ls(tf);
+        break;
+    case SYS_pwd:
+        sys_pwd(tf);
+        break;
+    case SYS_isdir:
+        sys_isdir(tf);
         break;
     default:
         syscall_set_errno(tf, E_INVAL_CALLNR);
