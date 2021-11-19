@@ -183,7 +183,8 @@ struct inode* copy_file(struct inode* ip) {
     if (inode_write(copy_ip, buf, 0, ip->size) != ip->size) {
         KERN_PANIC("copy write inode");
     }
-    inode_unlock(copy_ip);
+    // inode_unlock(copy_ip);
+    KERN_INFO("copy_dir completed\n");
     return copy_ip;
 }
 
@@ -192,6 +193,7 @@ struct inode* copy_dir(struct inode* ip, struct inode* parent_dp) {
     if (copy_ip == 0) {
         KERN_PANIC("alloc inode");
     }
+    KERN_INFO("new dir: inode=%d refs=%d\n", ip->inum, ip->ref);
     inode_lock(copy_ip);
     copy_ip->major = 0;
     copy_ip->minor = 0;
@@ -202,11 +204,13 @@ struct inode* copy_dir(struct inode* ip, struct inode* parent_dp) {
     inode_update(parent_dp);
     // Create . and .. entries.
                 // No ip->nlink++ for ".": avoid cyclic ref count.
+    KERN_INFO("creating . and ..\n");
     if (dir_link(copy_ip, ".", copy_ip->inum) < 0
         || dir_link(copy_ip, "..", parent_dp->inum) < 0)
         KERN_PANIC("create dots");
     
-    inode_unlock(copy_ip);
+    // inode_unlock(copy_ip);
+    KERN_INFO("finished copy_dir\n");
     return copy_ip;
 }
 
@@ -246,6 +250,7 @@ int cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_p
             if (ip->type == T_FILE) {
                 begin_trans();
                 copy_ip = copy_file(ip);
+                // inode_lock(copy_ip);
                 if ((existing_ip = dir_lookup(dest_dp, de.name, 0)) != 0) {
                     cp_info_overwrite(src_path, dest_path, de.name);
                     inode_lock(existing_ip);
@@ -258,6 +263,7 @@ int cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_p
                 }
                 dir_link(dest_dp, de.name, copy_ip->inum);
                 inode_unlockput(ip);
+                inode_unlockput(copy_ip);
                 commit_trans();
             } 
 
@@ -265,13 +271,18 @@ int cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_p
                 //create new dest dir
                 begin_trans();
                 if((existing_ip = dir_lookup(dest_dp, de.name, 0)) != 0) {
+                    //TODO: handle case where existing file with name is not a directory
                     cp_info_dir_merge(src_path, dest_path, de.name);
                     copy_ip = existing_ip;
                 }
                 else {
                     cp_info_dir(src_path, dest_path, de.name);
                     copy_ip = copy_dir(ip, dest_dp);
+                    // inode_lock(copy_ip);
                     dir_link(dest_dp, de.name, copy_ip->inum);
+                    copy_ip->nlink++;
+                    inode_update(copy_ip);
+                    inode_unlock(copy_ip);
                 }
                 inode_unlock(ip);
                 commit_trans();
@@ -288,6 +299,7 @@ int cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_p
 
                 cp_recursive_helper(ip, copy_ip, src_new_path, dest_new_path);
                 inode_put(ip);
+                inode_put(copy_ip);
             }
             //ip is unlocked in if/else
         }
