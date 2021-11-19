@@ -50,6 +50,7 @@ enum __syscall_nr {
     SYS_pwd,
     SYS_isdir,
     SYS_cp_recursive,
+    SYS_rm_recursive,
 
     MAX_SYSCALL_NR  /* XXX: always put it at the end of __syscall_nr */
 };

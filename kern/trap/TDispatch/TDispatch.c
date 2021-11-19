@@ -109,6 +109,9 @@ void syscall_dispatch(tf_t *tf)
     case SYS_cp_recursive:
         sys_cp_recursive(tf);
         break;
+    case SYS_rm_recursive:
+        sys_rm_recursive(tf);
+        break;
     default:
         syscall_set_errno(tf, E_INVAL_CALLNR);
     }

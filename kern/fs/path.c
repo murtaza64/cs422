@@ -125,6 +125,7 @@ static struct inode *namex(char *path, bool nameiparent, char *name)
             break;
         }
         next = dir_lookup(ip, name, 0);
+        // KERN_INFO("namex: next->type=%d\n", next->type);
         inode_unlockput(ip);
         if (next == 0) {
             return 0;
@@ -136,6 +137,7 @@ static struct inode *namex(char *path, bool nameiparent, char *name)
     //     return ip;
     // }
     // inode_put(ip);
+    // KERN_INFO("namex: ip->type=%d\n", ip->type);
     return ip;
 }
 

@@ -160,7 +160,7 @@ void sys_close(tf_t *tf)
         syscall_set_retval1(tf, -1);
         return;
     }
-    KERN_INFO("CLOSE %d\n", fd);
+    //KERN_INFO("CLOSE %d\n", fd);
     struct file* f = tcb_get_openfiles(get_curid())[fd];
     if (f->type != FD_INODE) {
         syscall_set_errno(tf, E_BADF);
@@ -170,7 +170,7 @@ void sys_close(tf_t *tf)
 
     file_close(f);
     tcb_set_openfiles(get_curid(), fd, 0);
-    KERN_INFO("CLOSE successful\n");
+    //KERN_INFO("CLOSE successful\n");
     syscall_set_errno(tf, E_SUCC);
     syscall_set_retval1(tf, 0);
 }
@@ -229,13 +229,13 @@ void sys_link(tf_t * tf)
     pt_copyin(get_curid(), syscall_get_arg3(tf), new, new_len);
     new[new_len] = '\0';
 
-    KERN_INFO("LINK %s -> %s\n", new, old);
+    //KERN_INFO("LINK %s -> %s\n", new, old);
 
     if ((ip = namei(old)) == 0) {
         syscall_set_errno(tf, E_NEXIST);
         return;
     }
-    // KERN_INFO("LINK: got ip from %s,\n");
+    // //KERN_INFO("LINK: got ip from %s,\n");
 
     begin_trans();
 
@@ -264,7 +264,7 @@ void sys_link(tf_t * tf)
     commit_trans();
 
     syscall_set_errno(tf, E_SUCC);
-    KERN_INFO("LINK successful\n");
+    //KERN_INFO("LINK successful\n");
     return;
 
 bad:
@@ -306,7 +306,7 @@ void sys_unlink(tf_t *tf)
     pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);
     path[path_len] = '\0';
 
-    KERN_INFO("UNLINK %s\n", path);
+    //KERN_INFO("UNLINK %s\n", path);
 
     if ((dp = nameiparent(path, name)) == 0) {
         syscall_set_errno(tf, E_DISK_OP);
@@ -348,7 +348,7 @@ void sys_unlink(tf_t *tf)
     commit_trans();
 
     syscall_set_errno(tf, E_SUCC);
-    KERN_INFO("LINK successful\n");
+    //KERN_INFO("LINK successful\n");
     return;
 
 bad:
@@ -363,7 +363,7 @@ static struct inode *create(char *path, short type, short major, short minor)
     uint32_t off;
     struct inode *ip, *dp;
     char name[DIRSIZ];
-    KERN_INFO("OPEN->CREATE\n");
+    //KERN_INFO("OPEN->CREATE\n");
     if ((dp = nameiparent(path, name)) == 0)
         return 0;
     inode_lock(dp);
@@ -399,7 +399,7 @@ static struct inode *create(char *path, short type, short major, short minor)
         KERN_PANIC("create: dir_link");
 
     inode_unlockput(dp);
-    KERN_INFO("OPEN->CREATE successful\n");
+    //KERN_INFO("OPEN->CREATE successful\n");
     return ip;
 }
 
@@ -416,7 +416,7 @@ void sys_open(tf_t *tf)
     omode = syscall_get_arg3(tf);
     path[path_len] = '\0';
 
-    KERN_INFO("OPEN %s\n", path);
+    //KERN_INFO("OPEN %s\n", path);
     if (omode & O_CREATE) {
         begin_trans();
         ip = create(path, T_FILE, 0, 0);
@@ -458,7 +458,7 @@ void sys_open(tf_t *tf)
     f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
     syscall_set_retval1(tf, fd);
     syscall_set_errno(tf, E_SUCC);
-    KERN_INFO("OPEN successful %s %d\n", path, fd);
+    //KERN_INFO("OPEN successful %s %d\n", path, fd);
 }
 
 void sys_mkdir(tf_t *tf)
@@ -470,7 +470,7 @@ void sys_mkdir(tf_t *tf)
     path_len = syscall_get_arg3(tf);
     pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);
     path[path_len] = '\0';
-    KERN_INFO("MKDIR %s\n", path);
+    //KERN_INFO("MKDIR %s\n", path);
 
     begin_trans();
     if ((ip = (struct inode *) create(path, T_DIR, 0, 0)) == 0) {
@@ -481,7 +481,7 @@ void sys_mkdir(tf_t *tf)
     inode_unlockput(ip);
     commit_trans();
     syscall_set_errno(tf, E_SUCC);
-    KERN_INFO("MKDIR successful %s\n", path);
+    //KERN_INFO("MKDIR successful %s\n", path);
 }
 
 void sys_chdir(tf_t *tf)
@@ -494,7 +494,7 @@ void sys_chdir(tf_t *tf)
     path_len = syscall_get_arg3(tf);
     pt_copyin(get_curid(), syscall_get_arg2(tf), path, path_len);
     path[path_len] = '\0';
-    KERN_INFO("CHDIR %s\n", path);
+    //KERN_INFO("CHDIR %s\n", path);
 
     if ((ip = namei(path)) == 0) {
         syscall_set_errno(tf, E_DISK_OP);
@@ -510,5 +510,5 @@ void sys_chdir(tf_t *tf)
     inode_put(tcb_get_cwd(pid));
     tcb_set_cwd(pid, ip);
     syscall_set_errno(tf, E_SUCC);
-    KERN_INFO("CHDIR successful %s\n", path);
+    //KERN_INFO("CHDIR successful %s\n", path);
 }

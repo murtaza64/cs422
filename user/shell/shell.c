@@ -29,7 +29,20 @@ void touch() {
 }
 
 void ls() {
-    int retval = sys_ls(args[1]);
+    char *path;
+    if (nargs == 1) {
+        path = ".";
+    }
+    else if (nargs == 2) {
+        path = args[1];
+    }
+    else {
+        printf("ls: accepts zero or one argument(s).\n");
+        return;
+    }
+    if(sys_ls(path) < 0) {
+        printf("ls: no such directory.\n");
+    }
 }
 
 int process_command(void) {
@@ -116,7 +129,7 @@ void cat() {
 
     // If arg is a directory, return
     if (sys_isdir(args[1]) == 1) {
-        printf("cat: %s is a directory\n", args);
+        printf("cat: %s is a directory\n", args[1]);
         return;
     }
 
@@ -124,7 +137,7 @@ void cat() {
 
     // Exit if file open doesn't work
     if (fd < 0) {
-        printf("cat: open file failed %s\n", args);
+        printf("cat: open file failed %s\n", args[1]);
         close(fd);
         return;
     }
@@ -134,12 +147,12 @@ void cat() {
     // Exit if file is longer than 10000 bytes or read fails and returns -1
     // TODO: Should still return first 10000 bytes if file is larger than that size?
     if (i < 0) {
-        printf("cat: read file failed %s\n", args);
+        printf("cat: read file failed %s\n", args[1]);
         close(fd);
         return;
     }
     if (i > 10000) {
-        printf("cat: file too big %s\n", args);
+        printf("cat: file too big %s\n", args[1]);
         close(fd);
         return;
     }
@@ -298,25 +311,28 @@ void appendstr(void) {
 }
 
 void rm(void) {
-    // link dest to source file
-    // unlink source
-    if (strcmp(args[1], "-r") == 0 && nargs == 4) {
-        // mv_recursive(args[2], args[3]);
+    if (strcmp(args[1], "-r") == 0 && nargs == 3) {
+        if (!sys_isdir(args[2])) {
+            printf("rm: no such directory\n");
+            return;
+        }
+        if (sys_rm_recursive(args[2]) < 0) {
+            printf("rm: something went wrong\n");
+        }
         return;
     }
 
     // Check num args for non-recursive case
-    if (nargs != 3) {
+    if (nargs != 2) {
          printf("rm: wrong number of arguments\n");
          return;
     }
 
     // If unlinking file doesn't work, return
-    if (unlink(args[2]) < 0) {
+    if (unlink(args[1]) < 0) {
         printf("mv: fatal: unable to unlink old file\n");
         return;
     }
-
     // Otherwise, it works and nothing else needs to be done
 }
 
@@ -383,8 +399,27 @@ int cp_copyfile(char* old, char* new) {
 void cp(void) {
     // link dest to source file
     // unlink source
+    
     if (strcmp(args[1], "-r") == 0 && nargs == 4) {
-        sys_cp_recursive(args[2], args[3]);
+        char* old = args[2];
+        char* new = args[3];
+        int old_fd;
+        if (!sys_isdir(old)) {
+            printf("cp: source file %s is not a directory.\n", old);
+        }
+        if ((old_fd = open(new, O_RDONLY)) < 0) {
+            mkdir(new);
+        }
+        else {
+            close(old_fd);
+        }
+        if (!sys_isdir(new)) {
+            printf("cp: dest file %s is not a directory.\n", new);
+            return;
+        }
+        if(sys_cp_recursive(old, new) < 0) {
+            printf("cp: something went wrong");
+        }
         return;
     }
 
@@ -402,7 +437,8 @@ void cp(void) {
     }
 
     if (sys_isdir(old)) {
-        printf("mv: source file is a directory.\n");
+        printf("cp: source file is a directory. use cp -r to copy recursively\n");
+        return;
     }
 
     printf("cp: %s -> %s\n", old, new);
@@ -415,15 +451,43 @@ void pwd(void) {
 
 int main(int argc, char *argv[])
 {
+    printf("initializing ckosh...\n");
+    mkdir("test");
+    int fd = open("test/file.txt", O_CREATE | O_RDWR);
+    write(fd, "hello world!\n", 32);
+    close(fd);
+
+    mkdir("deep");
+    mkdir("deep/deep2");
+    mkdir("deep/deep2/deep3");
+    mkdir("deep/deep2a");
+    fd = open("deep/file0.txt", O_CREATE);
+    close(fd);
+    fd = open("deep/deep2/file2.txt", O_CREATE);
+    close(fd);
+    fd = open("deep/deep2a/file2a.txt", O_CREATE);
+    close(fd);
+    fd = open("deep/deep2/deep3/file3.txt", O_CREATE);
+    close(fd);
+
+    mkdir("beep");
+    mkdir("beep/deep2a");
+    fd = open("beep/deep2a/file2a.txt", O_CREATE);
+    close(fd);
+    fd = open("beep/file1.txt", O_CREATE);
+    close(fd);
+
+    printf("\n");
     printf("Welcome to ckosh!\n");
     printf("Type 'help' for available commands.\n");
-    int fd = open("file.txt", O_CREATE | O_RDWR);
-    write(fd, "hello world!\ngoro sucks large pp", 32);
-    close(fd);
+
     while(1) {
         printf("$ ");
         if(!process_command()) {
             continue;
+        }
+        for (int i = 0; i < nargs; i++) {
+            printf("args[%d] = \"%s\"\n", i, args[i]);
         }
         // printf("%d args\n", nargs);
         // for (int i = 0; i < 8; i++) {

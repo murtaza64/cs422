@@ -160,6 +160,21 @@ static gcc_inline int sys_cp_recursive(char *old, char *new)
     return errno ? -1 : 0;
 }
 
+static gcc_inline int sys_rm_recursive(char *path)
+{
+    int errno, ret;
+
+    asm volatile ("int %2"
+                   : "=a" (errno), "=b" (ret)
+                   : "i" (T_SYSCALL),
+                     "a" (SYS_rm_recursive),
+                     "b" (path),
+                     "c" (strlen(path))
+                   : "cc", "memory");
+
+    return errno ? -1 : 0;
+}
+
 static gcc_inline int sys_unlink(char *path)
 {
     int errno, ret;
