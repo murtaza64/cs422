@@ -2,7 +2,7 @@
 2. Coded together
 3. 
     Part 1: Created thread sleep and wake up functions to allow threads to wait on resources using the lk.
-    Thread sleep acquires the required locks, sets the old pid's state to sleeping and waits until the 
+    Thread sleep acquires the required locks, sets the old pids state to sleeping and waits until the 
     resource is available, switches context with the next thread and marks it as running, then releases the required locks.
     Thread yield manually puts the old thread back onto the ready queue and sets the next thread from the ready queue
     as running. We also used the scheduler lock in this code for concurrency. 
@@ -15,6 +15,77 @@
         which looks up and return the inode for a path name, or 0 if it fails.
         - Syscall Layer: Modified the syscall functions to pass in strlen through inline assembly arguments. Implemented the fdalloc, sys_read, sys_write, sys_close and sys_fstat functions while adding error checking.
 
-    Part 4: Implemented a shell lol
+    Part 4:
+        - ls: Use [ls] to list subdirectories in current directory, or, can pass in a directory as an extra argument to 
+        list subdirectories in specified directory [ls dir_name]
+        - pwd: prints the current directory path [pwd]
+        - cd: change directory to current using . [cd .] as argument or previous directory using .. [cd ..]
+        - cp: copy file from source to destination: [cp source dest] can use the -r
+        argument to copy a folder [cp -r source dest]. Recursive copy overwrites file in destination folder
+        if they have the same name as files in the source folder. Checks are done to ensure that the destination is a directory
+        and source is either file if called regularly and directory if called with -r.
+        - mv: move file or directory from source to destination: [mv source destination]
+        - rm: remove a file using [rm filepath] or directory by using [rm -r directorypath]
+        - mkdir: makes a directory in current directory using [mkdir directory name]
+        - cat: output the contents of a specific file, checks are done to ensure the file 
+        exists, and a directory is not passed in. [cat filename]
+        - touch: create a file in current directory using [touch filename]
+        - writestr: write a string to a file, will create a new file if the file did not exist
+        or overwrite the exisiting file contents. [writestr "string to write" destfile]
+        - appendstr: append a string to a file, will check to see if the file exists first and throws
+        an error if it does not exist. Will append string to the file existing contents.
+        [appendstr "string to append" destfile]
+
+
+    Testing output:
+
+    Welcome to ckosh
+        $ ls
+        ./
+        ../
+        README
+        $ mkdir first_dir
+        $ mkdir second_dir
+        $ cd first_dir
+        $ touch temp.txt
+        $ mkdir third_dir
+        $ ls
+        ./
+        ../
+        temp.txt
+        third_dir/
+        $ pwd
+        /first_dir
+        $ writestr "2nd file" temp2.txt
+        $ appendstr " is beinf moved" temp2.txt
+        $ cat temp2.txt
+        [W] kern/fs/sysfile.c:93: READ: copied out 23 bytes, read 23 when 10000 were requested
+        2nd file is beinf moved
+        $ cd ..
+        $ mv first_dir/temp2.txt second_dir
+        mv: first_dir/temp2.txt -> second_dir/temp2.txt
+        $ cat second_dir/temp2.txt
+        [W] kern/fs/sysfile.c:93: READ: copied out 23 bytes, read 23 when 10000 were requested
+        2nd file is beinf moved
+        $ cp first_dir/temp.txt second_dir
+        cp: first_dir/temp.txt -> second_dir/temp.txt
+        [W] kern/fs/sysfile.c:93: READ: copied out 0 bytes, read 0 when 10000 were requested
+        $ ls first_dir
+        ./
+        ../
+        temp.txt
+        third_dir/
+        $ cp -r first_dir/third_dir second_dir
+        $ ls second_dir
+        ./
+        ../
+        temp2.txt
+        temp.txt
+        $ rm -r first_dir/third_dir
+        rm: unlink third_dir from parent
+        $ ls first_dir
+        ./
+        ../
+        temp.txt
 
 4. N/A
