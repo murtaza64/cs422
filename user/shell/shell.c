@@ -46,7 +46,7 @@ void ls() {
 }
 
 int process_command(void) {
-    int len = getline(linebuf, 1024);
+    getline(linebuf, 1024);
     int i = 0, j = 0;
     int curr_arg = 0;
     int quote_flag = 0;

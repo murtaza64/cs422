@@ -227,7 +227,7 @@ void cp_info_dir_merge(char *src_path, char *dest_path, char *name) {
     KERN_INFO("cp: %s/%s/ -> %s/%s/ (merge)\n", src_path, name, dest_path, name);
 }
 
-int cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_path, char *dest_path) {
+void cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_path, char *dest_path) {
     uint32_t off;
     struct dirent de;
     struct inode *ip, *copy_ip, *existing_ip;
@@ -366,7 +366,7 @@ void rm_info_dir(char *path, char *name) {
     KERN_INFO("rm: delete %s/%s/\n", path, name);
 }
 
-int rm_recursive_helper(struct inode *dp, char *path) {
+void rm_recursive_helper(struct inode *dp, char *path) {
     //TODO: more error cases
     uint32_t off;
     struct dirent de, zerode;

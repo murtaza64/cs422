@@ -90,7 +90,7 @@ void sys_read(tf_t *tf)
     }
     int copied = pt_copyout((void *) &file_buf, get_curid(), dest, r);
     if (copied != r || r != n) {
-        KERN_WARN("READ: copied out %d bytes, read %d when %d were requested\n", copied, r, n);
+        // KERN_WARN("READ: copied out %d bytes, read %d when %d were requested\n", copied, r, n);
     }
     spinlock_release(&file_buf_lock);
 
@@ -140,7 +140,7 @@ void sys_write(tf_t *tf)
         return;
     }
     if (w != copied || copied != n) {
-        KERN_WARN("WRITE: write %d bytes, copied in %d when %d were requested\n", w, copied, n);
+        // KERN_WARN("WRITE: write %d bytes, copied in %d when %d were requested\n", w, copied, n);
     }
     spinlock_release(&file_buf_lock);
     syscall_set_errno(tf, E_SUCC);
