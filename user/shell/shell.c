@@ -244,7 +244,7 @@ void writestr(void) {
 
 // Example: $ appendstr "insert string" file.txt
 void appendstr(void) {
-    int fd, i, j;
+    int fd, new_fd, i, j;
     char* insert_string = args[1];
     char* file_path = args[2];
     int string_len = strlen(insert_string);
@@ -297,17 +297,29 @@ void appendstr(void) {
         buf[i] = insert_string[j];
         i++;
     }
-    // buf[i] = '\0';
-    printf("buf: %s\n", buf); 
 
-    // Write the string to the  file
-    if ((write(fd, buf, i) < 0)) {
-        printf("appendstr: fatal: unable to write to file\n");
-        close(fd);
+    // Delete and create new file to empty out contents
+    close(fd);
+    if (unlink(file_path) < 0) {
+        printf("appendstr: fatal: unable to unlink old file\n");
         return;
     }
 
-    close(fd);
+    // Then, create fresh new file with nothing inside
+    if ((new_fd = open(file_path, O_CREATE | O_RDWR) < 0)) {
+        printf("appendstr: fatal: unable to create new file\n");
+        close(new_fd);
+        return;
+    }
+
+    // Write the string to the new file
+    if (write(new_fd, buf, i) < 0) {
+        printf("appendstr: fatal: unable to write to new file\n");
+        close(new_fd);
+        return;
+    }
+
+    close(new_fd);
 }
 
 void rm(void) {
@@ -451,44 +463,43 @@ void pwd(void) {
 
 int main(int argc, char *argv[])
 {
-    printf("initializing ckosh...\n");
-    mkdir("test");
-    int fd = open("test/file.txt", O_CREATE | O_RDWR);
-    write(fd, "hello world!\n", 32);
-    close(fd);
+    // printf("initializing ckosh...\n");
+    // mkdir("test");
+    // int fd = open("test/file.txt", O_CREATE | O_RDWR);
+    // write(fd, "hello world!\n", 32);
+    // close(fd);
 
-    mkdir("deep");
-    mkdir("deep/deep2");
-    mkdir("deep/deep2/deep3");
-    mkdir("deep/deep2a");
-    fd = open("deep/file0.txt", O_CREATE);
-    close(fd);
-    fd = open("deep/deep2/file2.txt", O_CREATE);
-    close(fd);
-    fd = open("deep/deep2a/file2a.txt", O_CREATE);
-    close(fd);
-    fd = open("deep/deep2/deep3/file3.txt", O_CREATE);
-    close(fd);
+    // mkdir("deep");
+    // mkdir("deep/deep2");
+    // mkdir("deep/deep2/deep3");
+    // mkdir("deep/deep2a");
+    // fd = open("deep/file0.txt", O_CREATE);
+    // close(fd);
+    // fd = open("deep/deep2/file2.txt", O_CREATE);
+    // close(fd);
+    // fd = open("deep/deep2a/file2a.txt", O_CREATE);
+    // close(fd);
+    // fd = open("deep/deep2/deep3/file3.txt", O_CREATE);
+    // close(fd);
 
-    mkdir("beep");
-    mkdir("beep/deep2a");
-    fd = open("beep/deep2a/file2a.txt", O_CREATE);
-    close(fd);
-    fd = open("beep/file1.txt", O_CREATE);
-    close(fd);
+    // mkdir("beep");
+    // mkdir("beep/deep2a");
+    // fd = open("beep/deep2a/file2a.txt", O_CREATE);
+    // close(fd);
+    // fd = open("beep/file1.txt", O_CREATE);
+    // close(fd);
 
     printf("\n");
     printf("Welcome to ckosh!\n");
-    printf("Type 'help' for available commands.\n");
 
     while(1) {
         printf("$ ");
         if(!process_command()) {
             continue;
         }
-        for (int i = 0; i < nargs; i++) {
-            printf("args[%d] = \"%s\"\n", i, args[i]);
-        }
+        // for (int i = 0; i < nargs; i++) {
+        //     printf("args[%d] = \"%s\"\n", i, args[i]);
+        // }
         // printf("%d args\n", nargs);
         // for (int i = 0; i < 8; i++) {
             // printf("%s\n", args[i]);
