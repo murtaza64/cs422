@@ -498,3 +498,108 @@ void sys_rm_recursive(tf_t *tf) {
     syscall_set_errno(tf, E_SUCC);
     syscall_set_retval1(tf, 0);
 }
+
+void sys_mv_dir(tf_t *tf) {
+    char old[128], new[128];
+    char name[DIRSIZ], oldname[DIRSIZ];
+    struct inode *dest_dp, *src_dp, *src_parent_dp, *dummy_ip;
+    int old_len, new_len;
+    uint32_t off;
+
+    old_len = syscall_get_arg4(tf); //TODO: error checks for path lengths
+    new_len = syscall_get_arg5(tf);
+    pt_copyin(get_curid(), syscall_get_arg2(tf), old, old_len);
+    old[old_len] = '\0';
+    pt_copyin(get_curid(), syscall_get_arg3(tf), new, new_len);
+    new[new_len] = '\0';
+
+    
+    if ((dest_dp = nameiparent(new, name)) == 0) {
+        syscall_set_errno(tf, E_BADF);
+        return;
+    }
+    // KERN_DEBUG("nameiparent 1 %s %d\n", name, dest_dp->inum);
+    if ((src_dp = namei(old)) == 0) {
+        //src can't be opened
+        syscall_set_errno(tf, E_BADF);
+        return;
+    }
+    inode_lock(src_dp);
+    // KERN_DEBUG("lock src\n");
+    if (src_dp->type != T_DIR) {
+        inode_unlockput(src_dp);
+        inode_unlockput(dest_dp);
+        syscall_set_errno(tf, E_BADF);
+        return;
+    }
+    inode_unlock(src_dp);
+
+    if ((src_parent_dp = nameiparent(old, oldname)) == 0) {
+        inode_unlockput(src_dp);
+        inode_unlockput(dest_dp);
+        syscall_set_errno(tf, E_BADF);
+        return;
+    }
+    // KERN_DEBUG("nameiparent 2\n");
+    inode_lock(src_parent_dp);
+    if (src_parent_dp->inum != dest_dp->inum) {
+        inode_lock(dest_dp);
+    }
+    else {
+        dest_dp = src_parent_dp;
+    }
+    inode_lock(src_dp);
+
+    // KERN_DEBUG("beginning transaction\n");
+    struct dirent zerode;
+    memset((void *) &zerode, 0, sizeof(zerode));
+
+    begin_trans();
+
+    //link new to old
+    if ((dummy_ip = dir_lookup(dest_dp, name, &off)) != 0) {
+        inode_unlockput(src_dp);
+        inode_unlockput(dest_dp);
+        inode_unlockput(src_parent_dp);
+        inode_put(dummy_ip);
+        commit_trans();
+        syscall_set_errno(tf, E_BADF);
+        syscall_set_retval1(tf, -1);
+    }
+    if (dir_link(dest_dp, name, src_dp->inum) < 0) {
+        KERN_PANIC("dir link");
+    }
+
+    //change .. in moving dir
+    if (src_parent_dp->inum != dest_dp->inum) {
+        if ((dummy_ip = dir_lookup(src_dp, "..", &off)) == 0) {
+            KERN_PANIC("dir lookup");
+        }
+        inode_put(dummy_ip);
+        inode_write(src_dp, (char *) &zerode, off, sizeof(zerode));
+        if (dir_link(src_dp, "..", dest_dp->inum) < 0) {
+            KERN_PANIC("dir link");
+        }
+    }
+
+    //remove entry in old parent
+    if ((dummy_ip = dir_lookup(src_parent_dp, oldname, &off)) == 0) {
+        KERN_PANIC("dir lookup");
+    }
+    inode_put(dummy_ip);
+    inode_write(src_parent_dp, (char *) &zerode, off, sizeof(zerode));
+
+    
+    inode_unlockput(src_dp);
+    if (src_parent_dp->inum != dest_dp->inum) {
+        inode_unlockput(dest_dp);
+    }
+    else {
+        inode_put(dest_dp);
+    }
+    inode_unlockput(src_parent_dp);
+    commit_trans();
+
+    syscall_set_errno(tf, E_SUCC);
+    syscall_set_retval1(tf, 0);
+}

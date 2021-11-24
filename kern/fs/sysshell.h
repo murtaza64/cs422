@@ -10,6 +10,7 @@ void sys_pwd(tf_t *tf);
 void sys_isdir(tf_t *tf);
 void sys_cp_recursive(tf_t *tf);
 void sys_rm_recursive(tf_t *tf);
+void sys_mv_dir(tf_t *tf);
 
 #endif  /* _KERN_ */
 

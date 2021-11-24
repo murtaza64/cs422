@@ -112,6 +112,9 @@ void syscall_dispatch(tf_t *tf)
     case SYS_rm_recursive:
         sys_rm_recursive(tf);
         break;
+    case SYS_mv_dir:
+        sys_mv_dir(tf);
+        break;
     default:
         syscall_set_errno(tf, E_INVAL_CALLNR);
     }

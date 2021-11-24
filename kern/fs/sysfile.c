@@ -235,7 +235,7 @@ void sys_link(tf_t * tf)
         syscall_set_errno(tf, E_NEXIST);
         return;
     }
-    // //KERN_INFO("LINK: got ip from %s,\n");
+    //KERN_INFO("LINK: got ip from %s,\n");
 
     begin_trans();
 

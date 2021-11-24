@@ -336,13 +336,18 @@ void rm(void) {
 
     // Check num args for non-recursive case
     if (nargs != 2) {
-         printf("rm: wrong number of arguments\n");
-         return;
+        printf("rm: wrong number of arguments\n");
+        return;
+    }
+
+    if (sys_isdir(args[1])) {
+        printf("rm: use -r to remove directory\n");
+        return;
     }
 
     // If unlinking file doesn't work, return
     if (unlink(args[1]) < 0) {
-        printf("mv: fatal: unable to unlink old file\n");
+        printf("rm: fatal: unable to unlink old file\n");
         return;
     }
     // Otherwise, it works and nothing else needs to be done
@@ -369,10 +374,16 @@ void mv(void) {
         append(new, lastname(old));
     }
 
-    if (sys_isdir(old)) {
-        printf("mv: source file is a directory.\n");
-    }
     printf("mv: %s -> %s\n", old, new);
+
+    if (sys_isdir(old)) {
+        if(sys_mv_dir(old, new) < 0) {
+            printf("mv: something went wrong");
+        }
+        return;
+    }
+
+
 
     mv_movefile(old, new);
 }
@@ -445,7 +456,7 @@ void cp(void) {
     }
 
     if (nargs != 3) {
-         printf("mv: wrong number of arguments\n");
+         printf("cp: wrong number of arguments\n");
          return;
     }
 

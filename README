@@ -39,53 +39,71 @@
 
     Testing output:
 
-    Welcome to ckosh
-        $ ls
-        ./
-        ../
-        README
-        $ mkdir first_dir
-        $ mkdir second_dir
-        $ cd first_dir
-        $ touch temp.txt
-        $ mkdir third_dir
-        $ ls
-        ./
-        ../
-        temp.txt
-        third_dir/
-        $ pwd
-        /first_dir
-        $ writestr "2nd file" temp2.txt
-        $ appendstr " is beinf moved" temp2.txt
-        $ cat temp2.txt
-        [W] kern/fs/sysfile.c:93: READ: copied out 23 bytes, read 23 when 10000 were requested
-        2nd file is beinf moved
-        $ cd ..
-        $ mv first_dir/temp2.txt second_dir
-        mv: first_dir/temp2.txt -> second_dir/temp2.txt
-        $ cat second_dir/temp2.txt
-        [W] kern/fs/sysfile.c:93: READ: copied out 23 bytes, read 23 when 10000 were requested
-        2nd file is beinf moved
-        $ cp first_dir/temp.txt second_dir
-        cp: first_dir/temp.txt -> second_dir/temp.txt
-        [W] kern/fs/sysfile.c:93: READ: copied out 0 bytes, read 0 when 10000 were requested
-        $ ls first_dir
-        ./
-        ../
-        temp.txt
-        third_dir/
-        $ cp -r first_dir/third_dir second_dir
-        $ ls second_dir
-        ./
-        ../
-        temp2.txt
-        temp.txt
-        $ rm -r first_dir/third_dir
-        rm: unlink third_dir from parent
-        $ ls first_dir
-        ./
-        ../
-        temp.txt
+    Welcome to ckosh!
+    $ mkdir d1
+    $ touch file.txt
+    $ writestr "hello" file.txt
+    $ cat file.txt
+    hello
+    $ mv file.txt d1
+    mv: file.txt -> d1/file.txt
+    $ appendstr " world!" d1/file.txt
+    $ cat d1/file.txt
+    hello world!
+    $ mkdir d1/d11
+    $ cp d1/file.txt d1/d11/file2.txt
+    cp: d1/file.txt -> d1/d11/file2.txt
+    $ cp -r d1 d2
+    cp: d1/file.txt -> d2/file.txt
+    cp: d1/d11/ -> d2/d11/
+    cp: d1/d11/file2.txt -> d2/d11/file2.txt
+    $ ls d1
+    ./
+    ../
+    file.txt
+    d11/
+    $ ls d2
+    ./
+    ../
+    file.txt
+    d11/
+    $ ls
+    ./
+    ../
+    README
+    d1/
+    d2/
+    $ mkdir d3
+    $ mv d2 d3/d1
+    mv: d2 -> d3/d1
+    $ ls d3
+    ./
+    ../
+    d1/
+    $ rm -r d3/d1/d11
+    rm: unlink d3/d1/d11/file2.txt
+    rm: unlink d11 from parent
+    $ touch d3/d1/d11
+    $ cp -r d1 d3
+    cp: d1/file.txt -> d3/d1/file.txt (overwrite)
+    cp: skipping d1/d11/ -> d3/d1/d11/ as d3/d1/d11 is not a directory
+    $ cp -r d1 d4
+    cp: d1/file.txt -> d4/file.txt
+    cp: d1/d11/ -> d4/d11/
+    cp: d1/d11/file2.txt -> d4/d11/file2.txt
+    $ mkdir d5
+    $ mv d4 d5
+    mv: d4 -> d5/d4
+    $ touch d1/file2.txt
+    $ mkdir d1/d12
+    $ mv d5/d4 d5/d1
+    mv: d5/d4 -> d5/d1
+    $ cp -r d1 d5/d
+    cp: d1/file.txt -> d5/d1/file.txt (overwrite)
+    cp: d1/d11/ -> d5/d1/d11/ (merge)
+    cp: d1/d11/file2.txt -> d5/d1/d11/file2.txt (overwrite)
+    cp: d1/file2.txt -> d5/d1/file2.txt
+    cp: d1/d12/ -> d5/d1/d12/
+    $
 
 4. N/A
