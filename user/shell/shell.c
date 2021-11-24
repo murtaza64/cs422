@@ -397,7 +397,7 @@ int cp_copyfile(char* old, char* new) {
     do {
         i = read(old_fd, buf, 10000);
         if (i < 0) {
-            printf("mv: fatal: unable to read file\n", "%s");
+            printf("cp: fatal: unable to read file\n", "%s");
             close(old_fd);
             return 0;
         }
@@ -415,16 +415,25 @@ void cp(void) {
     if (strcmp(args[1], "-r") == 0 && nargs == 4) {
         char* old = args[2];
         char* new = args[3];
-        int old_fd;
+        int new_fd;
         if (!sys_isdir(old)) {
             printf("cp: source file %s is not a directory.\n", old);
         }
-        if ((old_fd = open(new, O_RDONLY)) < 0) {
+        if ((new_fd = open(new, O_RDONLY)) < 0) {
             mkdir(new);
         }
-        else {
-            close(old_fd);
+        else if (sys_isdir(new)) {
+            //dest directory already exists, so create new 
+            //directory with name of source directory
+            close(new_fd);
+            
+            append(new, "/");
+            append(new, lastname(old));
+            if ((new_fd = open(new, O_RDONLY)) < 0) {
+                mkdir(new);
+            }
         }
+
         if (!sys_isdir(new)) {
             printf("cp: dest file %s is not a directory.\n", new);
             return;

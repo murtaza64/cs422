@@ -184,7 +184,7 @@ struct inode* copy_file(struct inode* ip) {
         KERN_PANIC("copy write inode");
     }
     // inode_unlock(copy_ip);
-    KERN_INFO("copy_dir completed\n");
+    // KERN_INFO("copy_dir completed\n");
     return copy_ip;
 }
 
@@ -193,7 +193,7 @@ struct inode* copy_dir(struct inode* ip, struct inode* parent_dp) {
     if (copy_ip == 0) {
         KERN_PANIC("alloc inode");
     }
-    KERN_INFO("new dir: inode=%d refs=%d\n", ip->inum, ip->ref);
+    // KERN_INFO("new dir: inode=%d refs=%d\n", ip->inum, ip->ref);
     inode_lock(copy_ip);
     copy_ip->major = 0;
     copy_ip->minor = 0;
@@ -204,13 +204,13 @@ struct inode* copy_dir(struct inode* ip, struct inode* parent_dp) {
     inode_update(parent_dp);
     // Create . and .. entries.
                 // No ip->nlink++ for ".": avoid cyclic ref count.
-    KERN_INFO("creating . and ..\n");
+    // KERN_INFO("creating . and ..\n");
     if (dir_link(copy_ip, ".", copy_ip->inum) < 0
         || dir_link(copy_ip, "..", parent_dp->inum) < 0)
         KERN_PANIC("create dots");
     
     // inode_unlock(copy_ip);
-    KERN_INFO("finished copy_dir\n");
+    // KERN_INFO("finished copy_dir\n");
     return copy_ip;
 }
 
@@ -225,6 +225,10 @@ void cp_info_dir(char *src_path, char *dest_path, char *name) {
 }
 void cp_info_dir_merge(char *src_path, char *dest_path, char *name) {
     KERN_INFO("cp: %s/%s/ -> %s/%s/ (merge)\n", src_path, name, dest_path, name);
+}
+void cp_info_dir_abort(char *src_path, char *dest_path, char *name) {
+    KERN_INFO("cp: skipping %s/%s/ -> %s/%s/ as %s/%s is not a directory\n", 
+    src_path, name, dest_path, name, dest_path, name);
 }
 
 void cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_path, char *dest_path) {
@@ -268,14 +272,24 @@ void cp_recursive_helper(struct inode *src_dp, struct inode *dest_dp, char *src_
             } 
 
             else if (ip->type == T_DIR) {
-                //create new dest dir
                 begin_trans();
                 if((existing_ip = dir_lookup(dest_dp, de.name, 0)) != 0) {
-                    //TODO: handle case where existing file with name is not a directory
+                    //found file with target name in dest dir
+                    inode_lock(existing_ip);
+                    if (existing_ip->type != T_DIR) {
+                        //skip if found file is not a directory
+                        cp_info_dir_abort(src_path, dest_path, de.name);
+                        inode_unlockput(existing_ip);
+                        inode_unlockput(ip);
+                        commit_trans();
+                        continue;
+                    }
+                    inode_unlock(existing_ip);
                     cp_info_dir_merge(src_path, dest_path, de.name);
                     copy_ip = existing_ip;
                 }
                 else {
+                    //create new dest dir
                     cp_info_dir(src_path, dest_path, de.name);
                     copy_ip = copy_dir(ip, dest_dp);
                     // inode_lock(copy_ip);
