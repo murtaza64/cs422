@@ -13,6 +13,9 @@ void sched_update(void);
 void thread_sleep(void *chan, spinlock_t *lk);
 void thread_wakeup(void *chan);
 
+void thread_wait(void);
+void thread_ready(unsigned int pid);
+
 #endif  /* _KERN_ */
 
 #endif  /* !_KERN_THREAD_PTHREAD_H_ */

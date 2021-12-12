@@ -9,6 +9,7 @@ typedef enum {
     TSTATE_READY = 0,
     TSTATE_RUN,
     TSTATE_SLEEP,
+    TSTATE_WAIT,
     TSTATE_DEAD
 } t_state;
 

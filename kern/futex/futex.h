@@ -1,6 +1,6 @@
 #ifndef _KERN_FUTEX_H_
 #define _KERN_FUTEX_H_
-#include <kern/lib/types.h>
+// #include <kern/lib/types.h>
 
 
 

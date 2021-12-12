@@ -7,6 +7,7 @@
 
 #include "import.h"
 #include <kern/fs/sysfile.h>
+#include <kern/futex/sysfutex.h>
 
 void syscall_dispatch(tf_t *tf)
 {
@@ -94,6 +95,12 @@ void syscall_dispatch(tf_t *tf)
     case SYS_stat:
         sys_fstat(tf);
         break;
+    case SYS_futex_wake:
+        sys_futex_wake(tf);
+    case SYS_futex_cmp_requeue:
+        sys_futex_wait(tf);
+    case SYS_futex_wait:
+        sys_futex_cmp_requeue(tf);
     default:
         syscall_set_errno(tf, E_INVAL_CALLNR);
     }

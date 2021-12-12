@@ -80,6 +80,37 @@ void thread_yield(void)
     }
 }
 
+void thread_wait(void)
+{
+    unsigned int old_cur_pid;
+    unsigned int new_cur_pid;
+
+    spinlock_acquire(&sched_lk);
+
+    old_cur_pid = get_curid();
+    tcb_set_state(old_cur_pid, TSTATE_WAIT);
+    // tqueue_enqueue(NUM_IDS, old_cur_pid);
+
+    new_cur_pid = tqueue_dequeue(NUM_IDS);
+    tcb_set_state(new_cur_pid, TSTATE_RUN);
+    set_curid(new_cur_pid);
+
+    if (old_cur_pid != new_cur_pid) {
+        spinlock_release(&sched_lk);
+        kctx_switch(old_cur_pid, new_cur_pid);
+    }
+    else {
+        spinlock_release(&sched_lk);
+    }
+}
+
+void thread_ready(unsigned int pid) {
+    spinlock_acquire(&sched_lk);
+    tcb_set_state(pid, TSTATE_READY);
+    tqueue_enqueue(NUM_IDS, pid);
+    spinlock_release(&sched_lk);
+}
+
 void sched_update(void)
 {
     spinlock_acquire(&sched_lk);
