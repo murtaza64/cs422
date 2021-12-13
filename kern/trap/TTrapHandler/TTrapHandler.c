@@ -13,6 +13,7 @@
 #include "import.h"
 
 void ide_intr(void);
+extern tf_t uctx_pool[NUM_IDS];
 
 static void trap_dump(tf_t *tf)
 {
@@ -48,7 +49,7 @@ void default_exception_handler(tf_t *tf)
     cur_pid = get_curid();
     trap_dump(tf);
 
-    KERN_PANIC("Trap %d @ 0x%08x.\n", tf->trapno, tf->eip);
+    KERN_PANIC("Trap %d @ 0x%08x pid %d cpu %d.\n", tf->trapno, tf->eip, get_curid(), get_pcpu_idx());
 }
 
 void pgflt_handler(tf_t *tf)
@@ -62,8 +63,8 @@ void pgflt_handler(tf_t *tf)
     fault_va = rcr2();
 
     // Uncomment this line to see information about the page fault
-    // KERN_DEBUG("Page fault: VA 0x%08x, errno 0x%08x, process %d, EIP 0x%08x.\n",
-    //            fault_va, errno, cur_pid, uctx_pool[cur_pid].eip);
+    KERN_DEBUG("Page fault: VA 0x%08x, errno 0x%08x, process %d, EIP 0x%08x.\n",
+               fault_va, errno, cur_pid, uctx_pool[cur_pid].eip);
 
     if (errno & PFE_PR) {
         trap_dump(tf);

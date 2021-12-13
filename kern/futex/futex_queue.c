@@ -1,3 +1,4 @@
+#include <lib/x86.h>
 #include <thread/PTCBIntro/export.h>
 #include "futex_queue.h"
 

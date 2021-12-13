@@ -1,5 +1,6 @@
+#include <lib/x86.h>
+#include <kern/lib/debug.h>
 #include "futex_queue.h"
-#include "futex.h"
 #include "futex_map.h"
 
 struct futexq futexq_pool[FUTEX_POOL_SIZE];
@@ -36,20 +37,23 @@ struct futexq *futex_map_create(uint32_t key) {
         //queue is empty
         if (futexq_pool[index].head == NUM_IDS) {
             futexq_pool[index].paddr = key;
-            return &futexq_pool[index].paddr;
+            return &futexq_pool[index];
         }
         ++index;
         index %= 128;
     } while(index != initial_index);
     KERN_PANIC("no space left in futex map"); //TODO
+    return NULL;
 }
 
 //returns a pointer to the futex wait queue for paddr
 struct futexq *futex_map_get_or_create(uint32_t *paddr) {
     struct futexq *q;
-    if (q == futex_map_get((uint32_t) paddr)) {
+    if ((q = futex_map_get((uint32_t) paddr)) != NULL) {
         return futex_map_create((uint32_t) paddr);
     }
+    KERN_PANIC("cannot create or get futex"); //TODO
+    return NULL;
 }
 
 // Function to remove the pointer at a specific key

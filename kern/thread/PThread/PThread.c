@@ -8,7 +8,7 @@
 
 #include "import.h"
 
-static spinlock_t sched_lk;
+spinlock_t sched_lk;
 
 unsigned int sched_ticks[NUM_CPUS];
 
@@ -29,12 +29,13 @@ void thread_init(unsigned int mbi_addr)
  * Allocates a new child thread context, sets the state of the new child thread
  * to ready, and pushes it to the ready queue.
  * It returns the child thread id.
+ * caller must acquire lock!!
  */
 unsigned int thread_spawn(void *entry, unsigned int id, unsigned int quota)
 {
     unsigned int pid;
 
-    spinlock_acquire(&sched_lk);
+    // spinlock_acquire(&sched_lk);
 
     pid = kctx_new(entry, id, quota);
     if (pid != NUM_IDS) {
@@ -42,7 +43,7 @@ unsigned int thread_spawn(void *entry, unsigned int id, unsigned int quota)
         tqueue_enqueue(NUM_IDS, pid);
     }
 
-    spinlock_release(&sched_lk);
+    // spinlock_release(&sched_lk);
 
     return pid;
 }

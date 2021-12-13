@@ -16,7 +16,7 @@
 //futex_wait(uaddr, val)
 void sys_futex_wait(tf_t *tf) {
     uint32_t *uaddr, val, pid;
-    uaddr = syscall_get_arg2(tf);
+    uaddr = (uint32_t *) syscall_get_arg2(tf);
     val = syscall_get_arg3(tf);
 
     pid = get_curid();
@@ -41,8 +41,8 @@ void sys_futex_wait(tf_t *tf) {
 
 //futex_wake(uaddr, n)
 void sys_futex_wake(tf_t *tf) {
-    uint32_t *uaddr, n, pid, n_woken, pid, curid;
-    uaddr = syscall_get_arg2(tf);
+    uint32_t *uaddr, n, pid, n_woken, curid;
+    uaddr = (uint32_t *) syscall_get_arg2(tf);
     n = syscall_get_arg3(tf);
     
     n_woken = 0;
@@ -64,10 +64,10 @@ void sys_futex_wake(tf_t *tf) {
 // futex_cmp_requeue(uaddr, n_wake, n_move, uaddr2, val)
 void sys_futex_cmp_requeue(tf_t *tf) {
     uint32_t *uaddr, n_wake, n_move, *uaddr2, val, n_woken, curid, n_moved, pid;
-    uaddr = syscall_get_arg2(tf);
+    uaddr = (uint32_t *) syscall_get_arg2(tf);
     n_wake = syscall_get_arg3(tf);
     n_move = syscall_get_arg4(tf);
-    uaddr2 = syscall_get_arg5(tf);
+    uaddr2 = (uint32_t *) syscall_get_arg5(tf);
     val = syscall_get_arg6(tf);
 
     n_woken = 0;
