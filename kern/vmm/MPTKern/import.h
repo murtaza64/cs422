@@ -11,6 +11,7 @@ void set_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr,
                           unsigned int page_index, unsigned int perm);
 void rmv_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr);
 unsigned int get_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr);
+unsigned int palloc(void);
 
 #endif  /* _KERN_ */
 

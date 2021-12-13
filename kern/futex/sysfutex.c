@@ -34,7 +34,6 @@ void sys_futex_wait(tf_t *tf) {
     futexq_enqueue(q, get_curid());
     spinlock_release(&q->lock);
 
-    tcb_set_state(pid, TSTATE_WAIT);
     thread_wait();
     syscall_set_errno(tf, E_SUCC);
     syscall_set_retval1(tf, 0);
@@ -60,4 +59,47 @@ void sys_futex_wake(tf_t *tf) {
     syscall_set_errno(tf, E_SUCC);
     syscall_set_retval1(tf, n_woken);
     
+}
+
+// futex_cmp_requeue(uaddr, n_wake, n_move, uaddr2, val)
+void sys_futex_cmp_requeue(tf_t *tf) {
+    uint32_t *uaddr, n_wake, n_move, *uaddr2, val, n_woken, curid, n_moved, pid;
+    uaddr = syscall_get_arg2(tf);
+    n_wake = syscall_get_arg3(tf);
+    n_move = syscall_get_arg4(tf);
+    uaddr2 = syscall_get_arg5(tf);
+    val = syscall_get_arg6(tf);
+
+    n_woken = 0;
+    n_moved = 0;
+    curid = get_curid();
+    uint32_t *paddr = (uint32_t *) get_ptbl_entry_by_va(curid, (unsigned int) uaddr);
+    uint32_t *paddr2 = (uint32_t *) get_ptbl_entry_by_va(curid, (unsigned int) uaddr2);
+
+    if (*paddr != val) {
+        syscall_set_retval1(tf, 1);
+        syscall_set_errno(tf, E_AGAIN);
+        return;
+    }
+
+    struct futexq *q = futex_map_get_or_create(paddr);
+    struct futexq *q2 = futex_map_get_or_create(paddr2);
+    
+    // Awake n_wake threads
+    spinlock_acquire(&q->lock);
+    while (n_woken < n_wake && (pid = futexq_dequeue(q)) != NUM_IDS) {
+        n_woken++;
+        thread_ready(pid);
+    }
+    spinlock_release(&q->lock);
+
+    // Requeue up to n_move threads
+    spinlock_acquire(&q2->lock);
+    while (n_moved < n_move && (pid = futexq_dequeue(q)) != NUM_IDS) {
+        futexq_enqueue(q2, pid);
+    }
+    spinlock_release(&q2->lock);
+
+    syscall_set_errno(tf, E_SUCC);
+    syscall_set_retval1(tf, n_woken + n_moved);
 }

@@ -9,6 +9,8 @@
 #define VM_USERHI     0xF0000000
 #define VM_USERLO_PDE (VM_USERLO / PDIRSIZE)
 #define VM_USERHI_PDE (VM_USERHI / PDIRSIZE)
+//???
+#define SHARED_PAGE_VADDR   VM_USERLO + 32 * PAGESIZE
 
 /**
  * Sets the entire page map for process 0 as the identity map.
@@ -16,13 +18,18 @@
  */
 void pdir_init_kern(unsigned int mbi_addr)
 {
-    unsigned int pde_index;
+    unsigned int pde_index, page_index, pid;
 
     pdir_init(mbi_addr);
 
     // Set identity map for user PDEs
     for (pde_index = VM_USERLO_PDE; pde_index < VM_USERHI_PDE; pde_index++) {
         set_pdir_entry_identity(0, pde_index);
+    }
+    //set up shared page
+    page_index = palloc();
+    for (pid = 1; pid < NUM_IDS; pid++) {
+        set_ptbl_entry_by_va(0, SHARED_PAGE_VADDR, page_index, PTE_P | PTE_W | PTE_U | PTE_G);
     }
 }
 
