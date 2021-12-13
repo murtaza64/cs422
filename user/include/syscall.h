@@ -209,4 +209,54 @@ static gcc_inline int sys_chdir(char *path)
     return errno ? -1 : 0;
 }
 
+static gcc_inline int sys_futex_wait(unsigned int uaddr, int val)
+{
+    int errno;
+    size_t ret;
+
+    asm volatile ("int %2"
+                  : "=a" (errno), "=b" (ret)
+                  : "i" (T_SYSCALL),
+                    "a" (SYS_futex_wait),
+                    "b" (uaddr),
+                    "c" (val)
+                  : "cc", "memory");
+
+    return errno ? -1 : ret;
+}
+
+static gcc_inline int sys_futex_wake(unsigned int uaddr, int n)
+{
+    int errno;
+    size_t ret;
+
+    asm volatile ("int %2"
+                  : "=a" (errno), "=b" (ret)
+                  : "i" (T_SYSCALL),
+                    "a" (SYS_futex_wake),
+                    "b" (uaddr),
+                    "c" (n)
+                  : "cc", "memory");
+
+    return errno ? -1 : ret;
+}
+
+
+static gcc_inline int sys_futex_cmp_requeue(unsigned int uaddr, int n_wake, int n_move, unsigned int uaddr2, int val)
+{
+    int errno, ret;
+
+    asm volatile ("int %2"
+                   : "=a" (errno), "=b" (ret)
+                   : "i" (T_SYSCALL),
+                     "a" (SYS_futex_cmp_requeue),
+                     "b" (uaddr),
+                     "c" (n_wake),
+                     "d" (n_move),
+                     "S" (uaddr2),
+                     "D" (val)
+                   : "cc", "memory");
+
+    return errno ? -1 : 0;
+}
 #endif  /* !_USER_SYSCALL_H_ */
