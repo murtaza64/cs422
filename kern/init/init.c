@@ -71,29 +71,33 @@ static void kern_main_ap(void)
     cpu_booted++;
     spinlock_acquire(&sched_lk);
     KERN_INFO("[AP KERN] sched lock acquired\n");
-    int pid, pid2;
+    unsigned int pid, pid2, pid3;
     if (cpu_idx == 1) {
         pid = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
         KERN_INFO("CPU%d: process ping1 %d is created.\n", cpu_idx, pid);
         pid2 = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
         KERN_INFO("CPU%d: process ping2 %d is created.\n", cpu_idx, pid2);
-        proc_create(_binary___obj_user_idle_idle_start, 1000);
+        pid3 = proc_create(_binary___obj_user_idle_idle_start, 1000);
+        KERN_INFO("CPU%d: process idle1 %d is created.\n", cpu_idx, pid3);
     }
     else if (cpu_idx == 2) {
         pid = proc_create(_binary___obj_user_pingpong_pong_start, 1000);
         KERN_INFO("CPU%d: process pong1 %d is created.\n", cpu_idx, pid);
         pid2 = proc_create(_binary___obj_user_pingpong_pong_start, 1000);
         KERN_INFO("CPU%d: process pong2 %d is created.\n", cpu_idx, pid2);
-        proc_create(_binary___obj_user_idle_idle_start, 1000);
+        pid3 = proc_create(_binary___obj_user_idle_idle_start, 1000);
+        KERN_INFO("CPU%d: process idle2 %d is created.\n", cpu_idx, pid3);
     }
     else {
         spinlock_release(&sched_lk);
         return;
     }
 
-    tqueue_remove(NUM_IDS, pid);
+    tqueue_remove(NUM_IDS + cpu_idx, pid);
     tcb_set_state(pid, TSTATE_RUN);
     set_curid(pid);
+    // KERN_INFO("CPU%d context switching to %d\n", cpu_idx, pid);
+    // KERN_INFO("CPU%d curid=%d\n", cpu_idx, get_curid());
     spinlock_release(&sched_lk);
     kctx_switch(0, pid);
 

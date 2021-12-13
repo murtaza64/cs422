@@ -20,6 +20,10 @@ int main(int argc, char **argv)
 //     else
 //         printf("Failed to launch shell.\n");
 // #endif
-    while(1) {}
+    for(unsigned int i = 0; 1; i++) {
+        if (i % 10000000 == 0) {
+            printf("idle says hi :D\n");
+        }
+    }
     return 0;
 }
