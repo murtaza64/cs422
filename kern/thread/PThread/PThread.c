@@ -87,7 +87,6 @@ void thread_wait(void)
 {
     unsigned int old_cur_pid;
     unsigned int new_cur_pid;
-    KERN_INFO("[SCHEDULER] wait CPU %d pid %d\n", get_pcpu_idx(), get_curid());
 
     spinlock_acquire(&sched_lk);
 
@@ -96,6 +95,7 @@ void thread_wait(void)
     // tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
 
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
+    KERN_INFO("[SCHEDULER] wait CPU %d pid %d, switching to pid %d\n", get_pcpu_idx(), old_cur_pid, new_cur_pid);
     tcb_set_state(new_cur_pid, TSTATE_RUN);
     set_curid(new_cur_pid);
 
@@ -111,7 +111,7 @@ void thread_wait(void)
 void thread_ready(unsigned int pid) {
     spinlock_acquire(&sched_lk);
     tcb_set_state(pid, TSTATE_READY);
-    tqueue_enqueue(NUM_IDS + get_pcpu_idx(), pid);
+    tqueue_enqueue(NUM_IDS + tcb_get_cpu(pid), pid);
     spinlock_release(&sched_lk);
 }
 

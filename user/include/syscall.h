@@ -209,7 +209,7 @@ static gcc_inline int sys_chdir(char *path)
     return errno ? -1 : 0;
 }
 
-static gcc_inline int sys_futex_wait(unsigned int uaddr, int val)
+static gcc_inline int sys_futex_wait(unsigned int *uaddr, int val)
 {
     int errno;
     size_t ret;
@@ -225,7 +225,7 @@ static gcc_inline int sys_futex_wait(unsigned int uaddr, int val)
     return errno ? -1 : ret;
 }
 
-static gcc_inline int sys_futex_wake(unsigned int uaddr, int n)
+static gcc_inline int sys_futex_wake(unsigned int *uaddr, int n)
 {
     int errno;
     size_t ret;
@@ -242,7 +242,7 @@ static gcc_inline int sys_futex_wake(unsigned int uaddr, int n)
 }
 
 
-static gcc_inline int sys_futex_cmp_requeue(unsigned int uaddr, int n_wake, int n_move, unsigned int uaddr2, int val)
+static gcc_inline int sys_futex_cmp_requeue(unsigned int *uaddr, int n_wake, int n_move, unsigned int uaddr2, int val)
 {
     int errno, ret;
 

@@ -20,6 +20,7 @@ void bufcache_init(void);
 void inode_init(void);
 void file_init(void);
 void fs_init(void);
+void futex_init(void);
 
 void devinit(uintptr_t mbi_addr)
 {
@@ -52,6 +53,9 @@ void devinit(uintptr_t mbi_addr)
     inode_init();     // inode cache
     ide_init();
     fs_init();
+
+    futex_init();
+
     KERN_INFO("[BSP KERN] IDE disk driver initialized\n");
 }
 

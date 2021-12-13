@@ -5,10 +5,16 @@
 #include <lib/trap.h>
 #include <lib/x86.h>
 #include <pcpu/PCPUIntro/export.h>
+#include <vmm/MPTKern/export.h>
 
 #include "import.h"
 
+#define PAGESIZE      4096
+#define VM_USERLO     0x40000000
+#define SHARED_PAGE_VADDR   VM_USERLO + (32 * PAGESIZE) //???
+
 extern tf_t uctx_pool[NUM_IDS];
+extern unsigned int SHARED_PAGE_INDEX;
 
 extern unsigned int last_active[NUM_CPUS];
 
@@ -40,7 +46,14 @@ unsigned int proc_create(void *elf_addr, unsigned int quota)
     id = get_curid();
     pid = thread_spawn((void *) proc_start_user, id, quota);
 
+    
+
     if (pid != NUM_IDS) {
+        if (map_page(pid, SHARED_PAGE_VADDR, SHARED_PAGE_INDEX, PTE_W | PTE_U | PTE_P /*| PTE_G*/) == MagicNumber) {
+            KERN_PANIC("could not map shared page\n");
+        }
+        KERN_INFO("[SHARING] mapped shared page for pid %d page_index %d vaddr %x perms %x\n", 
+                pid, SHARED_PAGE_INDEX, SHARED_PAGE_VADDR, PTE_P | PTE_W | PTE_U);
         elf_load(elf_addr, pid);
 
         uctx_pool[pid].es = CPU_GDT_UDATA | 3;

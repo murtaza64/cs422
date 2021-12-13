@@ -97,10 +97,13 @@ void syscall_dispatch(tf_t *tf)
         break;
     case SYS_futex_wake:
         sys_futex_wake(tf);
-    case SYS_futex_cmp_requeue:
-        sys_futex_wait(tf);
+        break;
     case SYS_futex_wait:
+        sys_futex_wait(tf);
+        break;
+    case SYS_futex_cmp_requeue:
         sys_futex_cmp_requeue(tf);
+        break;
     default:
         syscall_set_errno(tf, E_INVAL_CALLNR);
     }

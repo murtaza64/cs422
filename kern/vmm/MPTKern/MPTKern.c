@@ -12,6 +12,8 @@
 //???
 #define SHARED_PAGE_VADDR   VM_USERLO + (32 * PAGESIZE)
 
+unsigned int SHARED_PAGE_INDEX;
+
 unsigned int map_page(unsigned int proc_index, unsigned int vaddr,
                       unsigned int page_index, unsigned int perm);
 
@@ -21,7 +23,7 @@ unsigned int map_page(unsigned int proc_index, unsigned int vaddr,
  */
 void pdir_init_kern(unsigned int mbi_addr)
 {
-    unsigned int pde_index, page_index, pid;
+    unsigned int pde_index, pid;
 
     pdir_init(mbi_addr);
 
@@ -30,11 +32,9 @@ void pdir_init_kern(unsigned int mbi_addr)
         set_pdir_entry_identity(0, pde_index);
     }
     //set up shared page
-    page_index = palloc();
-    for (pid = 1; pid < NUM_IDS; pid++) {
-        map_page(pid, SHARED_PAGE_VADDR, page_index, PTE_W | PTE_U | PTE_P /*| PTE_G*/);
-        KERN_INFO("[SHARING] shared page pid %d index %d vaddr %x perms %x\n", pid, page_index, SHARED_PAGE_VADDR, PTE_P | PTE_W | PTE_U);
-    }
+    SHARED_PAGE_INDEX = palloc();
+    KERN_INFO("[SHARING] shared page index %d (paddr %x) vaddr %x perms %x\n", 
+            SHARED_PAGE_INDEX, SHARED_PAGE_INDEX << 12, SHARED_PAGE_VADDR, PTE_P | PTE_W | PTE_U);
 }
 
 /**
