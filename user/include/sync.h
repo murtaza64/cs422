@@ -9,13 +9,15 @@
 #define SHARED_PAGE_VADDR   VM_USERLO + (32 * PAGESIZE)
 #define BBUF_SIZE 16
 #define SYNC_MAGIC_NUMBER 0xdeadbeef
+#define UNKNOWN_HOLDER -2
+#define NO_HOLDER -1
 
 typedef unsigned int uint32_t;
 
 typedef struct {
     unsigned int lock;
     int holder;
-    int inited;
+    unsigned int inited;
 } mutex;
 
 unsigned int mutex_try_acquire(mutex* m);
@@ -23,7 +25,7 @@ void mutex_acquire(mutex* m);
 void mutex_release(mutex* m);
 
 typedef struct {
-    int val;
+    unsigned int val;
 } condvar;
 
 void cv_signal(condvar* cv);
@@ -33,10 +35,15 @@ void cv_broadcast(condvar* cv);
 typedef struct {
     int buf[BBUF_SIZE];
     unsigned int n;
+    unsigned int head;
+    unsigned int tail;
+
+    mutex mutex;
     condvar not_empty;
     condvar not_full;
-    mutex mutex;
+    
     unsigned int inited;
+    //optional
     unsigned int clients_registered;
 } bbuf;
 

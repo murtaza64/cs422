@@ -70,10 +70,11 @@ void thread_yield(void)
     tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
 
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
+    //KERN_INFO("[SCHEDULER] yield CPU %d pid %d, switching to pid %d\n", get_pcpu_idx(), old_cur_pid, new_cur_pid);
     tcb_set_state(new_cur_pid, TSTATE_RUN);
     set_curid(new_cur_pid);
 
-    // KERN_INFO("[SCHEDULER] CPU %d yield from %d to %d\n", get_pcpu_idx(), old_cur_pid, new_cur_pid);
+    //KERN_INFO("[SCHEDULER] CPU %d yield from %d to %d\n", get_pcpu_idx(), old_cur_pid, new_cur_pid);
     if (old_cur_pid != new_cur_pid) {
         spinlock_release(&sched_lk);
         kctx_switch(old_cur_pid, new_cur_pid);
@@ -95,7 +96,7 @@ void thread_wait(void)
     // tqueue_enqueue(NUM_IDS + get_pcpu_idx(), old_cur_pid);
 
     new_cur_pid = tqueue_dequeue(NUM_IDS + get_pcpu_idx());
-    KERN_INFO("[SCHEDULER] wait CPU %d pid %d, switching to pid %d\n", get_pcpu_idx(), old_cur_pid, new_cur_pid);
+    //KERN_INFO("[SCHEDULER] wait CPU %d pid %d, switching to pid %d\n", get_pcpu_idx(), old_cur_pid, new_cur_pid);
     tcb_set_state(new_cur_pid, TSTATE_RUN);
     set_curid(new_cur_pid);
 
@@ -138,7 +139,7 @@ void thread_sleep(void *chan, spinlock_t *lk)
     // TODO: your local variables here.
     unsigned int old_cur_pid;
     unsigned int new_cur_pid;
-    KERN_INFO("[SCHEDULER] sleep CPU %d pid %d\n", get_pcpu_idx(), get_curid());
+    //KERN_INFO("[SCHEDULER] sleep CPU %d pid %d\n", get_pcpu_idx(), get_curid());
 
     if (lk == 0)
         KERN_PANIC("sleep without lock");

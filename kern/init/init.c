@@ -71,12 +71,19 @@ static void kern_main_ap(void)
     cpu_booted++;
     spinlock_acquire(&sched_lk);
     KERN_INFO("[AP KERN] sched lock acquired\n");
-    unsigned int pid, pid2, pid3;
+    unsigned int pid, pid2, pid3, pid4, pid5, pid6;
     if (cpu_idx == 1) {
         pid = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
         KERN_INFO("CPU%d: process ping1 %d is created.\n", cpu_idx, pid);
         pid2 = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
         KERN_INFO("CPU%d: process ping2 %d is created.\n", cpu_idx, pid2);
+        pid4 = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
+        KERN_INFO("CPU%d: process pong3 %d is created.\n", cpu_idx, pid4);
+        pid5 = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
+        KERN_INFO("CPU%d: process pong4 %d is created.\n", cpu_idx, pid5);
+        pid6 = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
+        KERN_INFO("CPU%d: process pong5 %d is created.\n", cpu_idx, pid6);
+        
         pid3 = proc_create(_binary___obj_user_idle_idle_start, 1000);
         KERN_INFO("CPU%d: process idle1 %d is created.\n", cpu_idx, pid3);
     }
@@ -85,6 +92,11 @@ static void kern_main_ap(void)
         KERN_INFO("CPU%d: process pong1 %d is created.\n", cpu_idx, pid);
         pid2 = proc_create(_binary___obj_user_pingpong_pong_start, 1000);
         KERN_INFO("CPU%d: process pong2 %d is created.\n", cpu_idx, pid2);
+        pid4 = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
+        KERN_INFO("CPU%d: process ping3 %d is created.\n", cpu_idx, pid4);
+        pid5 = proc_create(_binary___obj_user_pingpong_ping_start, 1000);
+        KERN_INFO("CPU%d: process ping4 %d is created.\n", cpu_idx, pid5);
+
         pid3 = proc_create(_binary___obj_user_idle_idle_start, 1000);
         KERN_INFO("CPU%d: process idle2 %d is created.\n", cpu_idx, pid3);
     }
