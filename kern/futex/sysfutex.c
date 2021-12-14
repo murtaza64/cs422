@@ -32,17 +32,18 @@ void sys_futex_wait(tf_t *tf) {
     pid = get_curid();
     
     uint32_t *paddr = uaddr_to_paddr(pid, uaddr);
+    struct futexq *q = futex_map_get_or_create(paddr);
+    spinlock_acquire(&q->lock);
 
     if (*paddr != val) {
         KERN_INFO("[FUTEX WAIT] val check %d (pid %d on %x) failed; returning E_AGAIN\n", val, pid, uaddr);
         syscall_set_retval1(tf, 1);
         syscall_set_errno(tf, E_AGAIN);
+        spinlock_release(&q->lock);
         return;
     }
     KERN_INFO("[FUTEX WAIT] %d waiting on %x, val %d\n", pid, uaddr, val);
-    struct futexq *q = futex_map_get_or_create(paddr);
 
-    spinlock_acquire(&q->lock);
     futexq_enqueue(q, get_curid());
     spinlock_release(&q->lock);
 
@@ -87,24 +88,29 @@ void sys_futex_cmp_requeue(tf_t *tf) {
     n_move = syscall_get_arg4(tf);
     uaddr2 = (uint32_t *) syscall_get_arg5(tf);
     val = syscall_get_arg6(tf);
+
     KERN_INFO("[FUTEX CMP_REQUEUE] why is this running...?\n");
     n_woken = 0;
     n_moved = 0;
     curid = get_curid();
     uint32_t *paddr = uaddr_to_paddr(curid, uaddr);
     uint32_t *paddr2 = uaddr_to_paddr(curid, uaddr2);
+    struct futexq *q = futex_map_get_or_create(paddr);
+    struct futexq *q2 = futex_map_get_or_create(paddr2);
+
+    spinlock_acquire(&q->lock);
+    spinlock_acquire(&q2->lock);
 
     if (*paddr != val) {
         syscall_set_retval1(tf, 1);
         syscall_set_errno(tf, E_AGAIN);
+        spinlock_release(&q->lock);
+        spinlock_release(&q2->lock);
         return;
     }
 
-    struct futexq *q = futex_map_get_or_create(paddr);
-    struct futexq *q2 = futex_map_get_or_create(paddr2);
     
     // Awake n_wake threads
-    spinlock_acquire(&q->lock);
     while (n_woken < n_wake && (pid = futexq_dequeue(q)) != NUM_IDS) {
         n_woken++;
         thread_ready(pid);
@@ -112,7 +118,6 @@ void sys_futex_cmp_requeue(tf_t *tf) {
     spinlock_release(&q->lock);
 
     // Requeue up to n_move threads
-    spinlock_acquire(&q2->lock);
     while (n_moved < n_move && (pid = futexq_dequeue(q)) != NUM_IDS) {
         futexq_enqueue(q2, pid);
     }
