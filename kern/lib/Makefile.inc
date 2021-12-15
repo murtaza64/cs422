@@ -10,6 +10,11 @@ KERN_SRCFILES += $(KERN_DIR)/lib/seg.c
 KERN_SRCFILES += $(KERN_DIR)/lib/types.c
 KERN_SRCFILES += $(KERN_DIR)/lib/x86.c
 KERN_SRCFILES += $(KERN_DIR)/lib/monitor.c
+KERN_SRCFILES += $(KERN_DIR)/lib/pmap.c
+KERN_SRCFILES += $(KERN_DIR)/lib/elf.c
+KERN_SRCFILES += $(KERN_DIR)/lib/kstack.c
+KERN_SRCFILES += $(KERN_DIR)/lib/spinlock.c
+KERN_SRCFILES += $(KERN_DIR)/lib/reentrant_lock.c
 
 $(KERN_OBJDIR)/lib/%.o: $(KERN_DIR)/lib/%.c
 	@echo + cc[KERN/lib] $<

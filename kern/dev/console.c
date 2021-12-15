@@ -1,6 +1,7 @@
 #include <lib/string.h>
 #include <lib/types.h>
 #include <lib/debug.h>
+#include <lib/spinlock.h>
 
 #include "video.h"
 #include "console.h"
@@ -9,6 +10,8 @@
 
 #define BUFLEN 1024
 static char linebuf[BUFLEN];
+
+static spinlock_t cons_lk;
 
 struct {
     char buf[CONSOLE_BUFFER_SIZE];
@@ -20,12 +23,14 @@ void cons_init()
     memset(&cons, 0x0, sizeof(cons));
     serial_init();
     video_init();
+    spinlock_init(&cons_lk);
 }
 
 void cons_intr(int (*proc)(void))
 {
     int c;
 
+    spinlock_acquire(&cons_lk);
     while ((c = (*proc)()) != -1) {
         if (c == 0)
             continue;
@@ -33,6 +38,7 @@ void cons_intr(int (*proc)(void))
         if (cons.wpos == CONSOLE_BUFFER_SIZE)
             cons.wpos = 0;
     }
+    spinlock_release(&cons_lk);
 }
 
 char cons_getc(void)
@@ -44,14 +50,17 @@ char cons_getc(void)
     // (e.g., when called from the kernel monitor).
     serial_intr();
     keyboard_intr();
+    spinlock_acquire(&cons_lk);
 
     // grab the next character from the input buffer.
     if (cons.rpos != cons.wpos) {
         c = cons.buf[cons.rpos++];
         if (cons.rpos == CONSOLE_BUFFER_SIZE)
             cons.rpos = 0;
+        spinlock_release(&cons_lk);
         return c;
     }
+    spinlock_release(&cons_lk);
     return 0;
 }
 

@@ -2,11 +2,16 @@
 // controlling the kernel and exploring the system interactively.
 
 #include <lib/debug.h>
+#include <lib/elf.h>
 #include <lib/types.h>
+#include <lib/gcc.h>
 #include <lib/string.h>
 #include <lib/x86.h>
+#include <lib/thread.h>
 #include <lib/monitor.h>
 #include <dev/console.h>
+#include <vmm/MPTIntro/export.h>
+#include <vmm/MPTNew/export.h>
 
 #define CMDBUF_SIZE 80  // enough for one VGA text line
 
@@ -45,12 +50,6 @@ int mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
     dprintf("  end    %08x\n", end);
     dprintf("Kernel executable memory footprint: %dKB\n",
             ROUNDUP(end - start, 1024) / 1024);
-    return 0;
-}
-
-int mon_backtrace(int argc, char **argv, struct Trapframe *tf)
-{
-    // TODO
     return 0;
 }
 

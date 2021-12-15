@@ -21,3 +21,13 @@ Icon*
 eject.sh
 *.cerr
 .gdbinit
+gdb.txt
+make.sh
+out_cpu1.txt
+out_cpu2.txt
+out.txt
+out2.txt
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+test
+a.out

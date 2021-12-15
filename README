@@ -1,5 +1,33 @@
-This is the master branch of mcertikos. You are not supposed to work on this
-branch. Instead, follow the instructions (linked below) and checkout specific
-branches for assignments.
+Lab6 README
 
-https://flint.cs.yale.edu/cs422/assignments/index.html
+List here the following info:
+1. Murtaza Javaid, Daniel Li
+2. Together
+3. Project 11: Advanced Synchronization: User-level Mutex
+
+Summary: Created a user-level mutex by creating a hash map struct, queue, new sys calls and a new shared page in the kernel. Also created a mutex struct, bounded buffer and condition variable in user space to test out mutex operations with ping and pong on multiple processors. 
+
+Kernel code
+    - Futex map: takes in a physical address to and hashes it to create a key. Stores the physical address of a futexq
+    - Futex object: futexq object has a paddr, lock, head and tail to assign other pids or remove pids from the queue.
+        Futexq_enqueue appends the pid onto the tail of the queue and dequeue removes from the head of the queue as well.
+    - Sys_futex_wait: Calculate paddr from curid and uaddr input. Checks to see if the value at paddr has changed, return E_AGAIN if it has, otherwise, get or create the futex queue from the addr using futex_map_get_or_create.
+    Enqeueue the cur id on the futexq and then wait.
+    - Sys_futex_wake: Calculate paddr from curid and uaddr input. Get or create the futex queue with the paddr and dequeue n_woken threads from that queue. 
+    - Sys_futex_cmp_requeue: Calculate paddr1 and paddr2 from curid and uaddr1 and uaddr2 input. Obtain the futexq for the respective paddresses using map_get_or_create.
+    Check to see if the value at paddr1 has changed, return E_AGAIN if it has, otherwise, awake and dequeue n_wake threads from q1 and enqeue up to n_move threads from q1 onto q2.
+    **the thundering herd problem doesn’t apply because we will never have multiple threads waking up contending for the same resource because we only wake up one thread in cv signal**
+    - Shared page: Created a shared page at VADDR =  VM_USERLO + 32 * PAGESIZE by initializing the page to 0 for every pid in pdir_init_kern so that it is shared across all processes.
+User code
+- Mutex object: init using mutex_init which sets the holder to CLIENT_ID. Acquire is done by checking to see if the mutex has been inited, and then calling futex_wait on the mutex lock until it is freed.
+Releasing the mutex sets the holder to NO_HOLDER and the lock value to 0 before using sys_futex_wake to wake up threads on the mutex lock
+- Condition Variable: Simply has a value attribute which denotes True and false to see if a bbuf is not_empty or not_full. cv_signal uses sys_futex_wake after setting the cv->val to True in order to wake up the threads.
+cv_wait sets the cv->val to false before releasing the mutex and calling sys_futex_wait
+- Bounded Buffer: Only lets one thread init the bbuf. If the magic value is already set it increments clients registered, otherwise it does the full initialization. Bbuf produce produces an item by acquiring a mutex lock, waiting on the cv for not full and then assigning the item to the tail.
+The not_empty signal is sent using cv_signal and the mutex is released. Bbuf consume consumes an item by acquiring a mutex lock, waiting on the cv for not empty and then removing an item from the head. The not_full signal is sent using cv_signal and the mutex is released. 
+- Ping and pong: pong is the consumer and ping is the producer, both processes use the SHARED_PAGE_VADDR for the bbuf and run on multiple cores. In init.c 2 ping processes, 3 pong processes and 1 idle process is running on cpu 1 and 2 ping processes, 3 pong processes and 1 idle process.
+
+OUTPUT:
+
+
+4. N/A
