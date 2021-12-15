@@ -27,7 +27,7 @@ struct futexq *futex_map_get(uint32_t key) {
     // KERN_INFO("[FUTEX MAP GET] key %x hash %d\n", key, index);
     do {
         if (futexq_pool[index].paddr == key) {
-            KERN_INFO("[FUTEX MAP GET] found %x at index %d\n", key, index);
+            // KERN_INFO("[FUTEX MAP GET] found %x at index %d\n", key, index);
             return &futexq_pool[index];
         }
 
@@ -43,12 +43,12 @@ struct futexq *futex_map_get(uint32_t key) {
 struct futexq *futex_map_create(uint32_t key) {
     uint32_t index = hash_key(key);
     uint32_t initial_index = index; 
-    KERN_INFO("[FUTEX MAP CREATE] key %x hash %d\n", key, index);
+    // KERN_INFO("[FUTEX MAP CREATE] key %x hash %d\n", key, index);
     do {
         //queue is empty
         if (futexq_pool[index].head == NUM_IDS) {
             futexq_pool[index].paddr = key;
-            KERN_INFO("[FUTEX MAP CREATE] inserted %x at index %d\n", key, index);
+            // KERN_INFO("[FUTEX MAP CREATE] inserted %x at index %d\n", key, index);
             return &futexq_pool[index];
         }
         ++index;

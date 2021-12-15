@@ -36,19 +36,19 @@ void sys_futex_wait(tf_t *tf) {
     spinlock_acquire(&q->lock);
 
     if (*paddr != val) {
-        KERN_INFO("[FUTEX WAIT] val check %d (pid %d on %x) failed; returning E_AGAIN\n", val, pid, uaddr);
+        KERN_INFO("[*FUTEX WAIT] val check %d (pid %d on %x) failed; returning E_AGAIN\n", val, pid, uaddr);
         syscall_set_retval1(tf, 1);
         syscall_set_errno(tf, E_AGAIN);
         spinlock_release(&q->lock);
         return;
     }
-    KERN_INFO("[FUTEX WAIT] %d waiting on %x, val %d\n", pid, uaddr, val);
+    KERN_INFO("[*FUTEX WAIT] pid %d waiting on %x, val %d\n", pid, uaddr, val);
 
     futexq_enqueue(q, get_curid());
     spinlock_release(&q->lock);
 
     thread_wait();
-    //KERN_INFO("[FUTEX WAIT] %d woken up on %x\n", pid, uaddr);
+    //KERN_INFO("[*FUTEX WAIT] %d woken up on %x\n", pid, uaddr);
     syscall_set_errno(tf, E_SUCC);
     syscall_set_retval1(tf, 0);
 }
@@ -69,14 +69,14 @@ void sys_futex_wake(tf_t *tf) {
     // KERN_INFO("[FUTEX WAKE] acquiring lock on futexq for %x...\n", uaddr);
     spinlock_acquire(&q->lock);
     while (n_woken < n && (pid = futexq_dequeue(q)) != NUM_IDS) {
-        KERN_INFO("[FUTEX WAKE] woke up %d on %x\n", pid, uaddr);
+        KERN_INFO("[*FUTEX WAKE] woke up pid %d on %x\n", pid, uaddr);
         n_woken++;
         thread_ready(pid);
     }
     spinlock_release(&q->lock);
     syscall_set_errno(tf, E_SUCC);
     syscall_set_retval1(tf, n_woken);
-    //KERN_INFO("[FUTEX WAKE] woke up %d threads on %x\n", n_woken, uaddr);
+    KERN_INFO("[*FUTEX WAKE] woke up %d threads on %x\n", n_woken, uaddr);
     
 }
 
@@ -89,7 +89,7 @@ void sys_futex_cmp_requeue(tf_t *tf) {
     uaddr2 = (uint32_t *) syscall_get_arg5(tf);
     val = syscall_get_arg6(tf);
 
-    KERN_INFO("[FUTEX CMP_REQUEUE] why is this running...?\n");
+    KERN_INFO("[*FUTEX CMP_REQUEUE] why is this running...?\n");
     n_woken = 0;
     n_moved = 0;
     curid = get_curid();
