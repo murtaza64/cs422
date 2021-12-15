@@ -27,7 +27,429 @@ cv_wait sets the cv->val to false before releasing the mutex and calling sys_fut
 The not_empty signal is sent using cv_signal and the mutex is released. Bbuf consume consumes an item by acquiring a mutex lock, waiting on the cv for not empty and then removing an item from the head. The not_full signal is sent using cv_signal and the mutex is released. 
 - Ping and pong: pong is the consumer and ping is the producer, both processes use the SHARED_PAGE_VADDR for the bbuf and run on multiple cores. In init.c 2 ping processes, 3 pong processes and 1 idle process is running on cpu 1 and 2 ping processes, 3 pong processes and 1 idle process.
 
-OUTPUT:
+OUTPUT EXAMPLE:
 
+addr_6845:3d4
+[BSP KERN] cons initialized.
+[BSP KERN] devinit mbi_addr: 37568
+
+	CPU0: APIC id = 0, BSP
+	CPU1: APIC id = 1, AP
+	CPU2: APIC id = 2, AP
+	CPU3: APIC id = 3, AP
+	IOAPIC: APIC id = 0, base = fec00000
+	Unhandled ACPI entry (type=2)
+	Unhandled ACPI entry (type=2)
+	Unhandled ACPI entry (type=2)
+	Unhandled ACPI entry (type=2)
+	Unhandled ACPI entry (type=2)
+	Unhandled ACPI entry (type=4)
+CPU0: AuthenticAMD, FAMILY 6(0), MODEL 6(0), STEP 3, FEATURE 0x80802001 0x78bfbf9, SSE, SSE2, SSE3, POPCNT, L1 Cache 64 KB (64 bytes) 
+[BSP KERN] PCPU initialized
+[D] kern/dev/tsc.c:57: pitcnt=4112, tscmin=1472, tscmax=2432
+[D] kern/dev/tsc.c:104: TSC freq = 999.000 MHz.
+[BSP KERN] TSC initialized
+[D] kern/dev/lapic.c:125: LAPIC timer freq = 999916000 Hz.
+[D] kern/dev/lapic.c:129: Set LAPIC TICR = f41ec.
+[BSP KERN] INTR initialized
+[BSP KERN] Register trap handlers...
+[BSP KERN] Done.
+[BSP KERN] Enabling interrupts...
+[BSP KERN] Done.
+
+BIOS-e820: 0x00000000 - 0x0009fbff (usable)
+BIOS-e820: 0x0009fc00 - 0x0009ffff (reserved)
+BIOS-e820: 0x000f0000 - 0x000fffff (reserved)
+BIOS-e820: 0x00100000 - 0x7ffdefff (usable)
+BIOS-e820: 0x7ffdf000 - 0x7fffffff (reserved)
+BIOS-e820: 0xfffc0000 - 0xffffffff (reserved)
+[FUTEX] futex pool initialized
+[BSP KERN] IDE disk driver initialized
+[D] kern/pmm/MContainer/MContainer.c:44: 
+real quota: 262111
+
+[SHARING] shared page index 262144 (paddr 40000000) vaddr 40020000 perms 7
+[BSP KERN] Kernel initialized.
+[BSP KERN] In kernel main.
+
+[BSP KERN] Number of CPUs in this system: 4. 
+[BSP KERN] Boot CPU 1 .... 
+CPU1: AuthenticAMD, FAMILY 6(0), MODEL 6(0), STEP 3, FEATURE 0x80802001 0x78bfbf9, SSE, SSE2, SSE3, POPCNT, L1 Cache 64 KB (64 bytes) 
+[AP1 KERN] PCPU initialized
+[BSP KERN] done.
+[BSP KERN] Boot CPU 2 .... 
+CPU2: AuthenticAMD, FAMILY 6(0), MODEL 6(0), STEP 3, FEATURE 0x80802001 0x78bfbf9, SSE, SSE2, SSE3, POPCNT, L1 Cache 64 KB (64 bytes) 
+[AP2 KERN] PCPU initialized
+[BSP KERN] done.
+[BSP KERN] Boot CPU 3 .... 
+CPU3: AuthenticAMD, FAMILY 6(0), MODEL 6(0), STEP 3, FEATURE 0x80802001 0x78bfbf9, SSE, SSE2, SSE3, POPCNT, L1 Cache 64 KB (64 bytes) 
+[AP3 KERN] PCPU initialized
+[BSP KERN] done.
+[D] kern/dev/lapic.c:117: [0] Retry to calibrate internal timer of LAPIC.
+[D] kern/dev/lapic.c:117: [0] Retry to calibrate internal timer of LAPIC.
+[D] kern/dev/lapic.c:117: [1] Retry to calibrate internal timer of LAPIC.
+[D] kern/dev/lapic.c:125: LAPIC timer freq = 999927000 Hz.
+[D] kern/dev/lapic.c:129: Set LAPIC TICR = f41f7.
+[AP1 KERN] INTR initialized.
+[AP1 KERN] Register trap handlers...
+[AP1 KERN] Done.
+[AP1 KERN] Enabling interrupts...
+[AP1 KERN] Done.
+[AP1 KERN] kernel_main_ap
+[AP KERN] sched lock acquired
+[SHARING] mapped shared page for pid 1 page_index 262144 vaddr 40020000 perms 7
+[D] kern/dev/lapic.c:125: LAPIC timer freq = 94887000 Hz.
+[D] kern/dev/lapic.c:129: Set LAPIC TICR = 172a7.
+[D] kern/dev/lapic.c:125: LAPIC timer freq = 75991000 Hz.
+[D] kern/dev/lapic.c:129: Set LAPIC TICR = 128d7.
+[AP3 KERN] INTR initialized.
+[AP3 KERN] Register trap handlers...
+[AP3 KERN] Done.
+[AP3 KERN] Enabling interrupts...
+CPU1: process ping1 1 is created.
+[AP2 KERN] INTR initialized.
+[AP3 KERN] Done.
+[SHARING] mapped shared page for pid 2 page_index 262144 vaddr 40020000 perms 7
+[AP3 KERN] kernel_main_ap
+CPU1: process ping2 2 is created.
+[AP2 KERN] Register trap handlers...
+[SHARING] mapped shared page for pid 3 page_index 262144 vaddr 40020000 perms 7
+CPU1: process pong3 3 is created.
+[AP2 KERN] Done.
+[SHARING] mapped shared page for pid 4 page_index 262144 vaddr 40020000 perms 7
+[AP2 KERN] Enabling interrupts...
+CPU1: process pong4 4 is created.
+[AP2 KERN] Done.
+[SHARING] mapped shared page for pid 5 page_index 262144 vaddr 40020000 perms 7
+[AP2 KERN] kernel_main_ap
+CPU1: process pong5 5 is created.
+[SHARING] mapped shared page for pid 6 page_index 262144 vaddr 40020000 perms 7
+CPU1: process idle1 6 is created.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 1, EIP 0x400000c4.
+[AP KERN] sched lock acquired
+[SHARING] mapped shared page for pid 7 page_index 262144 vaddr 40020000 perms 7
+CPU2: process pong1 7 is created.
+[SHARING] mapped shared page for pid 8 page_index 262144 vaddr 40020000 perms 7
+CPU2: process pong2 8 is created.
+[SHARING] mapped shared page for pid 9 page_index 262144 vaddr 40020000 perms 7
+CPU2: process ping3 9 is created.
+[SHARING] mapped shared page for pid 10 page_index 262144 vaddr 40020000 perms 7
+CPU2: process ping4 10 is created.
+[SHARING] mapped shared page for pid 11 page_index 262144 vaddr 40020000 perms 7
+CPU2: process idle2 11 is created.
+[AP KERN] sched lock acquired
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 2, EIP 0x400000c4.
+[PING] ping started.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 3, EIP 0x400000c4.
+[PING] ping started.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 4, EIP 0x400000c4.
+[PING] ping started.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 5, EIP 0x400000c4.
+[PING] ping started.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 6, EIP 0x4000004b.
+idle
+[PING] ping started.
+40020000
+40020000
+40020000
+idle says hi :D
+40020000
+40020000
+[BBUF INIT] &mutex = 0x4002004c &not_full.val = 0x4002005c &not_empty.val 0x40020058
+[SYNC #-2] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #-2] lock 4002004c released
+[PING #0] inited buf :D
+1 =====> [PING #0] produce i=0 item=1 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 1, buf->n = 1
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+4 =====> [PING #0] produce i=1 item=4 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 4, buf->n = 2
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+7 =====> [PING #0] produce i=2 item=7 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 7, buf->n = 3
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+10 =====> [PING #0] produce i=3 item=10 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 10, buf->n = 4
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+13 =====> [PING #0] produce i=4 item=13 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 13, buf->n = 5
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+16 =====> [PING #0] produce i=5 item=16 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 16, buf->n = 6
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+19 =====> [PING #0] produce i=6 item=19 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 19, buf->n = 7
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+22 =====> [PING #0] produce i=7 item=22 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 22, buf->n = 8
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+25 =====> [PING #0] produce i=8 item=25 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 25, buf->n = 9
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+28 =====> [PING #0] produce i=9 item=28 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 28, buf->n = 10
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+31 =====> [PING #0] produce i=10 item=31 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 31, buf->n = 11
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+34 =====> [PING #0] produce i=11 item=34 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 34, buf->n = 12
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+37 =====> [PING #0] produce i=12 item=37 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 37, buf->n = 13
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+40 =====> [PING #0] produce i=13 item=40 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 40, buf->n = 14
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+43 =====> [PING #0] produce i=14 item=43 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 43, buf->n = 15
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+46 =====> [PING #0] produce i=15 item=46 
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 46, buf->n = 16
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+49 =====> [PING #0] produce i=16 item=49 
+[SYNC #0] lock 4002004c acquired!
+[PRODUCE #0] waiting for not full...
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #0] lock 4002004c released
+[*FUTEX WAIT] pid 2 waiting on 4002005c, val 0
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 10, EIP 0x400000c4.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 8, EIP 0x400000a6.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 7, EIP 0x400000a6.
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 11, EIP 0x4000004b.
+idle
+[D] kern/trap/TTrapHandler/TTrapHandler.c:66: Page fault: VA 0xeffffffc, errno 0x00000006, process 9, EIP 0x400000c4.
+pong started.
+[PING] ping started.
+[PING] ping started.
+pong started.
+idle says hi :D
+40020000
+40020000
+[SYNC #-2] 4002004c instant lock acquire failed (holder = -2). calling futex_wait...
+[SYNC #-2] lock 4002004c acquired!
+[*FUTEX WAIT] pid 7 waiting on 4002004c, val 1
+[SYNC #-2] lock 4002004c acquired!
+[SYNC #-2] 4002004c instant lock acquire failed (holder = -2). calling futex_wait...
+[*FUTEX WAIT] val check 1 (pid 10 on 4002004c) failed; returning E_AGAIN
+[SYNC #-2] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 7 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #-2] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #-2] lock 4002004c acquired!
+[SYNC #-2] lock 4002004c released
+[PONG #1] i am a consumer :c
+[SYNC #-2] releasing 4002004c...
+[*FUTEX WAKE] woke up 0 threads on 4002004c
+[SYNC #-2] lock 4002004c released
+[SYNC #-2] 4002004c instant lock acquire failed (holder = -2). calling futex_wait...
+[*FUTEX WAIT] pid 7 waiting on 4002004c, val 1
+[SYNC #1] lock 4002004c acquired!
+[*FUTEX WAKE] woke up pid 2 on 4002005c
+[*FUTEX WAKE] woke up 1 threads on 4002005c
+[SYNC #0] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] pid 2 waiting on 4002004c, val 1
+[PING #2] i am a producer :p
+1 =====> [PING #2] produce i=0 item=1 
+[CONSUME #1] consumed 1, buf->n = 15
+[SYNC #-2] lock 4002004c released
+[SYNC #2] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] val check 1 (pid 9 on 4002004c) failed; returning E_AGAIN
+[PING #3] i am a producer :p
+[SYNC #1] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 7 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #2] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+1 =====> [PING #3] produce i=0 item=1 
+[SYNC #1] lock 4002004c released
+[PRODUCE #2] produced 1, buf->n = 16
+<==== 1 [PONG #1] consume i=0 item=1 
+[SYNC #-2] 4002004c instant lock acquire failed (holder = 2). calling futex_wait...
+[*FUTEX WAIT] pid 7 waiting on 4002004c, val 1
+[SYNC #2] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 2 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #0] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] pid 2 waiting on 4002004c, val 1
+[SYNC #3] 4002004c instant lock acquire failed (holder = 2). calling futex_wait...
+[*FUTEX WAIT] pid 10 waiting on 4002004c, val 1
+[SYNC #1] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 4002005c
+[SYNC #2] lock 4002004c released
+[CONSUME #1] consumed 4, buf->n = 15
+4 =====> [PING #2] produce i=1 item=4 
+[SYNC #1] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 7 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #2] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #2] produced 4, buf->n = 16
+[SYNC #-2] 4002004c instant lock acquire failed (holder = 2). calling futex_wait...
+[*FUTEX WAIT] pid 7 waiting on 4002004c, val 1
+[SYNC #1] lock 4002004c released
+<==== 4 [PONG #1] consume i=1 item=4 
+[SYNC #2] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 2 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #0] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] pid 2 waiting on 4002004c, val 1
+[SYNC #2] lock 4002004c released
+[SYNC #1] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 4002005c
+7 =====> [PING #2] produce i=2 item=7 
+[CONSUME #1] consumed 7, buf->n = 15
+[SYNC #1] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 10 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #1] lock 4002004c released
+[SYNC #2] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] pid 9 waiting on 4002004c, val 1
+[SYNC #3] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #3] produced 1, buf->n = 16
+<==== 7 [PONG #1] consume i=2 item=7 
+[SYNC #3] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 7 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #3] lock 4002004c released
+[SYNC #1] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 4002005c
+[SYNC #-2] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] pid 7 waiting on 4002004c, val 1
+4 =====> [PING #3] produce i=1 item=4 
+[CONSUME #1] consumed 10, buf->n = 15
+[SYNC #1] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 2 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #0] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[PRODUCE #0] produced 49, buf->n = 16
+[SYNC #0] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 9 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #0] lock 4002004c released
+52 =====> [PING #0] produce i=17 item=52 
+[SYNC #0] 4002004c instant lock acquire failed (holder = 2). calling futex_wait...
+[*FUTEX WAIT] pid 2 waiting on 4002004c, val 1
+[SYNC #3] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] pid 10 waiting on 4002004c, val 1
+[SYNC #1] lock 4002004c released
+[SYNC #2] lock 4002004c acquired!
+<==== 10 [PONG #1] consume i=3 item=10 
+[PRODUCE #2] waiting for not full...
+[SYNC #2] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 7 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #1] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 4002005c
+[CONSUME #1] consumed 13, buf->n = 15
+[SYNC #2] lock 4002004c released
+[SYNC #-2] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] val check 1 (pid 7 on 4002004c) failed; returning E_AGAIN
+[*FUTEX WAIT] val check 0 (pid 9 on 4002005c) failed; returning E_AGAIN
+[SYNC #1] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 2 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #-2] lock 4002004c acquired!
+[SYNC #0] 4002004c instant lock acquire failed (holder = -2). calling futex_wait...
+[*FUTEX WAIT] pid 2 waiting on 4002004c, val 1
+[SYNC #2] 4002004c instant lock acquire failed (holder = -2). calling futex_wait...
+[*FUTEX WAIT] pid 9 waiting on 4002004c, val 1
+[SYNC #1] lock 4002004c released
+[SYNC #-2] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 10 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #3] lock 4002004c acquired!
+<==== 13 [PONG #1] consume i=4 item=13 
+[*FUTEX WAKE] woke up 0 threads on 40020058
+[SYNC #-2] lock 4002004c released
+[PONG #4] i am a consumer :c
+[PRODUCE #3] produced 4, buf->n = 16
+[SYNC #1] 4002004c instant lock acquire failed (holder = 3). calling futex_wait...
+[*FUTEX WAIT] val check 1 (pid 8 on 4002004c) failed; returning E_AGAIN
+[SYNC #3] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 2 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #4] 4002004c instant lock acquire failed (holder = 3). calling futex_wait...
+[SYNC #0] 4002004c instant lock acquire failed (holder = 1). calling futex_wait...
+[*FUTEX WAIT] pid 2 waiting on 4002004c, val 1
+[*FUTEX WAIT] pid 7 waiting on 4002004c, val 1
+[SYNC #1] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 4002005c
+[CONSUME #1] consumed 16, buf->n = 15
+[SYNC #3] lock 4002004c released
+[SYNC #1] releasing 4002004c...
+[*FUTEX WAKE] woke up pid 9 on 4002004c
+[*FUTEX WAKE] woke up 1 threads on 4002004c
+[SYNC #2] lock 4002004c acquired!
+[*FUTEX WAKE] woke up 0 threads on 40020058
 
 4. N/A
